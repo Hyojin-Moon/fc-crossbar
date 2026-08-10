@@ -79,6 +79,7 @@ Region 과 Postgres Type 은 생성 후 변경할 수 없다.
 **SQL Editor** 에 파일 내용을 통째로 붙여넣고 Run 한다.
 
 `0001` / `0002` / `0004` 는 여러 번 실행해도 안전하다.
+`0005` 는 이미 있는 아이디를 건너뛰므로 재실행 안전하다.
 `0003` 의 샘플 데이터 블록은 **일정이 하나도 없을 때만** 동작하도록 가드가 걸려 있다 —
 `events` / `expenses` 는 PK 가 `gen_random_uuid()` 라서 `on conflict do nothing` 이 걸리지 않고,
 가드가 없으면 재실행마다 일정 8개와 지출 4건이 복제된다.
@@ -94,6 +95,7 @@ Region 과 Postgres Type 은 생성 후 변경할 수 없다.
 | 2 | `supabase/migrations/0002_rls.sql` | RLS 정책 + 테이블 권한 | 이어서 바로 |
 | 3 | `supabase/migrations/0003_seed.sql` | Super Admin 지정 + 샘플 데이터 | **앱에서 회원가입한 뒤** |
 | — | `supabase/migrations/0004_login_id.sql` | `profiles.login_id` 추가 | **0001 을 이미 실행해 둔 DB 에서만.** 내용이 0001 에 반영되어 있어 새로 만드는 DB 는 불필요 |
+| — | `supabase/migrations/0005_dev_members.sql` | 더미 회원 7명 + 투표·회비 샘플 | **개발용, 선택.** 통계·회비 화면을 채우려면 회원이 여러 명 필요하다. 운영 DB 에서는 실행 금지 |
 
 ## 3. 인증 설정 — Confirm email 은 반드시 꺼야 한다
 
@@ -150,6 +152,7 @@ where  login_id = '본인아이디';
 ├── app.json                  Expo 설정 (앱 이름, android.package, versionCode)
 ├── eas.json                  EAS Build 프로파일 (모두 APK 출력)
 ├── supabase/migrations/      0001_schema / 0002_rls / 0003_seed
+│                             0004_login_id / 0005_dev_members(개발용)
 └── src/
     ├── app/                  expo-router 파일 기반 라우팅
     │   ├── _layout.tsx       루트: AuthProvider · 스플래시 · Stack

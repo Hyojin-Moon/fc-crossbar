@@ -110,7 +110,8 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
               fontSize={11}
               fontWeight="700"
               fill={Colors.navy}
-              textAnchor={i === lastIndex ? 'end' : 'middle'}>
+              // 첫 점은 y축 눈금 라벨과, 마지막 점은 오른쪽 여백과 겹치므로 안쪽으로 정렬
+              textAnchor={i === 0 ? 'start' : i === lastIndex ? 'end' : 'middle'}>
               {String(points[i].attendCount)}
             </SvgText>
           ))}

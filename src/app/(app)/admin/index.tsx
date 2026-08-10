@@ -27,6 +27,12 @@ export default function AdminMenuScreen() {
             subtitle="활성화 / 비활성화 · 가입 승인"
             onPress={() => router.push('/(app)/admin/members')}
           />
+          <MenuRow
+            icon="download-outline"
+            title="데이터 내보내기"
+            subtitle="회원 · 회비 · 지출 · 참석률 CSV"
+            onPress={() => router.push('/(app)/admin/export')}
+          />
         </View>
 
         {isSuperAdmin ? (

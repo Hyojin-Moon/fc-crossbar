@@ -20,10 +20,10 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 | 3 | 일정 및 참석 투표 | ✅ 완료 |
 | 4 | 참석률 통계 | ✅ 완료 |
 | 5 | 관리자 회비 관리 + 회원 관리 | ✅ 완료 |
-| 6 | Excel / CSV Import·Export | ⬜ 예정 |
+| 6 | CSV Export | ✅ 완료 (Import 는 컬럼 형식 미정으로 보류) |
 | 7 | APK 빌드 및 배포 | ⬜ 예정 (빌드 설정은 준비됨) |
 
-남은 것은 Phase 6(CSV/XLSX)과 Phase 7(APK 배포)이다.
+남은 것은 Phase 7(APK 배포)과 CSV Import 다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
 
 ## 명령어
@@ -174,12 +174,13 @@ where  login_id = '본인아이디';
     │       ├── admin/        관리 · 관리자 전용
     │       │   ├── index.tsx      메뉴
     │       │   ├── members.tsx    회원 관리 (상태 · 권한 · 삭제)
+    │       │   ├── export.tsx     CSV 내보내기
     │       │   ├── settings.tsx   팀 설정 (super_admin)
     │       │   └── logs.tsx       활동 로그 (super_admin)
     │       └── profile.tsx   내 정보 / 로그아웃
     ├── lib/                  supabase · auth-context · errors · events · members
     │                         dates · login-id · vote-options · stats · finance
-    │                         settings · admin · confirm
+    │                         settings · admin · confirm · csv · export-data
     ├── components/           공용 UI (버튼 · 입력 · 카드 · 헤더)
     ├── constants/theme.ts    색상 · 여백 토큰
     └── types/database.ts     DB 스키마 TypeScript 타입
@@ -326,6 +327,23 @@ USING/WITH CHECK 를 각각 평가한다. `FOR ALL` 이 셋 다 만족하는 것
 `ALTER TABLE ... SET DEFAULT` 방식은 앱에서 토글할 수 없어 쓰지 않는다.
 트리거는 `SECURITY DEFINER` 라 이 조회가 RLS 를 우회한다 — 가입 시점엔 프로필이 없으므로
 의도된 동작이다. `is_admin()` 류 가드를 넣지 말 것.
+
+## CSV 내보내기 (Phase 6)
+
+**XLSX 대신 CSV 를 쓴다.** `xlsx` 라이브러리는 1MB 이상이라 APK 가 커진다.
+**BOM 을 붙인 UTF-8 CSV** 는 Excel 에서 한글이 깨지지 않고 그대로 열린다 — BOM 을 빼면 깨진다.
+셀 이스케이프는 RFC 4180 (쉼표·따옴표·줄바꿈이 있으면 따옴표로 감싸고 내부 따옴표는 두 번).
+
+저장 경로가 플랫폼마다 다르다 (`src/lib/csv.ts`).
+- 웹: `Blob` + `<a download>`
+- 네이티브: `expo-file-system` 의 `new File(Paths.cache, name)` → `create({overwrite:true})` → `write()`
+  후 `expo-sharing` 으로 공유 시트. 앱이 '다운로드 폴더'에 직접 쓰려면 저장소 권한이 필요해서
+  공유 시트를 쓴다 (카카오톡·드라이브로 바로 보낼 수 있어 팀 운영에는 오히려 편하다).
+
+`expo-file-system` 은 SDK 54 부터 API 가 바뀌었다. 예전 `writeAsStringAsync` 는
+`expo-file-system/legacy` 에 있다. 새 `File` / `Paths` 클래스를 쓴다.
+
+내보내기에 `member_id` 같은 UUID 만 넣지 말 것 — 사람이 읽는 파일이므로 이름·아이디를 함께 넣는다.
 
 ## 차트 (Phase 4)
 

@@ -8,26 +8,20 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1. Super Admin 지정  (★ 이메일만 본인 것으로 바꿔서 실행)
+-- 1. Super Admin 지정  (★ 아이디만 본인 것으로 바꿔서 실행)
 --    super_admin 은 앱 화면에서 부여할 수 없고 오직 이 SQL 로만 지정된다.
 -- ---------------------------------------------------------------------
-update public.profiles p
+update public.profiles
 set    role = 'super_admin', status = 'active'
-from   auth.users u
-where  u.id = p.user_id
-  and  u.email = 'your-email@example.com';   -- ★ 여기를 수정
+where  login_id = 'your-login-id';   -- ★ 여기를 수정
 
 -- 확인
--- select p.name, p.role, p.status, u.email
--- from public.profiles p join auth.users u on u.id = p.user_id
--- order by p.created_at;
+-- select login_id, name, role, status from public.profiles order by created_at;
 
 -- ---------------------------------------------------------------------
 -- 2. 일반 관리자 지정 (선택)
 -- ---------------------------------------------------------------------
--- update public.profiles p set role = 'admin'
--- from auth.users u
--- where u.id = p.user_id and u.email = 'manager@example.com';
+-- update public.profiles set role = 'admin' where login_id = 'manager-id';
 
 -- =====================================================================
 -- 3. 샘플 데이터 (개발/테스트용 - 운영 DB 에서는 실행하지 말 것)

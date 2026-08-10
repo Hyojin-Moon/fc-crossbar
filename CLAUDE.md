@@ -116,11 +116,9 @@ npx expo start -c        # -c : 캐시 초기화 (환경변수 바꾼 뒤에는 
 ```sql
 -- 1) 먼저 앱에서 회원가입한다 (profiles 행이 트리거로 자동 생성됨)
 -- 2) Supabase SQL Editor 에서 실행
-update public.profiles p
+update public.profiles
 set    role = 'super_admin', status = 'active'
-from   auth.users u
-where  u.id = p.user_id
-  and  u.email = '본인이메일@example.com';
+where  login_id = '본인아이디';
 ```
 
 앱을 재시작하면 회비 · 관리 탭이 나타난다.

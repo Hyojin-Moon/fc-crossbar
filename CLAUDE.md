@@ -33,6 +33,10 @@ npx tsc --noEmit && npx expo export -p android --output-dir /tmp/export-check
 
 테스트 러너는 없다.
 
+`experiments.typedRoutes` 가 켜져 있는데 라우트 타입(`.expo/types`)은 **개발 서버가 한 번 돌아야**
+생성된다. 즉 서버를 띄운 적 없는 상태의 `tsc --noEmit` 은 `href` 문자열을 검사하지 못한다.
+`npx expo start` 를 한 번 돌린 뒤 typecheck 를 다시 하면 실제 라우트까지 검증된다.
+
 `.env` 가 없으면 `src/lib/supabase.ts` 가 import 시점에 throw 하며 앱이 뜨지 않는다.
 `cp .env.example .env` 후 `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` 를 채운다.
 Expo 는 `EXPO_PUBLIC_` 접두사가 붙은 값만 클라이언트에 노출한다.

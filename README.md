@@ -100,12 +100,15 @@ git push -u origin main
 | Database password | 강력하게 생성 후 **따로 보관**. 앱은 쓰지 않고 DB 직접 접속·백업 때만 필요 |
 | Region | **Northeast Asia (Seoul)** |
 | Enable Data API | ✅ 켜기 (supabase-js 가 이 API 를 쓴다) |
-| Automatically expose new tables | ✅ 켜기 |
-| Enable automatic RLS | ✅ **켜기** — 새 테이블에 RLS 가 자동으로 걸려 실수로 데이터가 노출되는 걸 막는다 |
+| Automatically expose new tables | ☐ **끄기** |
+| Enable automatic RLS | ✅ **켜기** |
 | Postgres Type | Postgres (DEFAULT) |
 
-> 위 두 옵션을 같이 켜야 안전하다. “새 테이블 자동 노출”만 켜고 “automatic RLS”를 끄면,
-> 나중에 테이블을 하나 만들 때 RLS 없이 전체 공개될 수 있다.
+> `Automatically expose new tables` 를 꺼도 된다. `0002_rls.sql` 이 8개 테이블의 GRANT 를
+> 직접 부여하기 때문이다. 켜 두면 그 GRANT 가 중복될 뿐 동작은 같지만, 나중에 만드는 테이블이
+> 자동으로 API 에 노출되므로 Supabase 화면의 권장대로 꺼 두는 편이 안전하다.
+> 단, 이후 Table Editor 로 테이블을 새로 만들면 **GRANT 를 직접 넣어야** 한다.
+>
 > 생성 후에는 바꿀 수 없는 항목(Region, Postgres Type)이 있으니 만들기 전에 확인한다.
 
 ### 1-2. 마이그레이션 실행

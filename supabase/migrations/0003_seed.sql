@@ -44,6 +44,14 @@ begin
     return;
   end if;
 
+  -- events / expenses 는 PK 가 gen_random_uuid() 라서 매번 새 UUID 가 생긴다.
+  -- 즉 on conflict do nothing 이 걸리지 않아 재실행하면 일정이 중복 생성된다.
+  -- 그래서 "일정이 하나도 없을 때만" 샘플을 넣는다.
+  if exists (select 1 from public.events) then
+    raise notice '이미 일정이 있습니다. 샘플 데이터를 건너뜁니다. (중복 생성 방지)';
+    return;
+  end if;
+
   -- 지난 일정 6개 (주 단위로 과거)
   for idx in 1..6 loop
     insert into public.events (

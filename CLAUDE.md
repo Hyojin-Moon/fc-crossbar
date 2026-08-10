@@ -76,7 +76,12 @@ Region 과 Postgres Type 은 생성 후 변경할 수 없다.
 
 ## 2. 마이그레이션 실행
 
-**SQL Editor** 에 파일 내용을 통째로 붙여넣고 Run 한다. 세 파일 모두 여러 번 실행해도 안전하다.
+**SQL Editor** 에 파일 내용을 통째로 붙여넣고 Run 한다.
+
+`0001` / `0002` / `0004` 는 여러 번 실행해도 안전하다.
+`0003` 의 샘플 데이터 블록은 **일정이 하나도 없을 때만** 동작하도록 가드가 걸려 있다 —
+`events` / `expenses` 는 PK 가 `gen_random_uuid()` 라서 `on conflict do nothing` 이 걸리지 않고,
+가드가 없으면 재실행마다 일정 8개와 지출 4건이 복제된다.
 
 > **SQL Editor 의 `Limit 100 rows` 를 `No limit` 으로 바꿔야 한다.**
 > 이 옵션이 켜져 있으면 쿼리를 `select * from ( ... ) limit 100` 으로 감싸기 때문에

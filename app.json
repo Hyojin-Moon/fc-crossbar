@@ -21,7 +21,6 @@
     },
     "ios": {
       "bundleIdentifier": "com.fccrossbar.app",
-      "icon": "./assets/expo.icon",
       "supportsTablet": true
     },
     "web": {
@@ -35,7 +34,7 @@
         {
           "backgroundColor": "#12263F",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 96
+          "imageWidth": 200
         }
       ]
     ],

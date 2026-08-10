@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -45,7 +46,11 @@ export default function SignInScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Text style={styles.logo}>FC CROSSBAR</Text>
+            <Image
+              source={require('@/assets/images/logo-black.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={styles.tagline}>팀 출석 · 회비 관리</Text>
           </View>
 
@@ -89,8 +94,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.five },
-  header: { alignItems: 'center', gap: Spacing.one },
-  logo: { fontSize: 30, fontWeight: '800', color: Colors.navy, letterSpacing: 1 },
+  header: { alignItems: 'center', gap: Spacing.two },
+  logo: { width: 160, height: 176 },
   tagline: { fontSize: 14, color: Colors.textSecondary },
   form: { gap: Spacing.three },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.two },

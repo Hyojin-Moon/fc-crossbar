@@ -78,6 +78,11 @@ Region 과 Postgres Type 은 생성 후 변경할 수 없다.
 
 **SQL Editor** 에 파일 내용을 통째로 붙여넣고 Run 한다. 세 파일 모두 여러 번 실행해도 안전하다.
 
+> **SQL Editor 의 `Limit 100 rows` 를 `No limit` 으로 바꿔야 한다.**
+> 이 옵션이 켜져 있으면 쿼리를 `select * from ( ... ) limit 100` 으로 감싸기 때문에
+> `UPDATE` / `INSERT` / `ALTER` / `DO $$ ... $$` 가 전부 `42601 syntax error` 로 실패한다.
+> 에러가 실제보다 뒤쪽 라인(예: `LINE 5`)을 가리키는 게 이 증상의 표식이다.
+
 | 순서 | 파일 | 내용 | 시점 |
 |---|---|---|---|
 | 1 | `supabase/migrations/0001_schema.sql` | 테이블 · 인덱스 · 헬퍼함수 · 트리거 · 관리자 RPC | 프로젝트 생성 직후 |
@@ -408,6 +413,7 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 | 로그인은 되는데 "회원 정보를 찾을 수 없습니다" | `0001_schema.sql` 의 `on_auth_user_created` 트리거 미적용. SQL 재실행 후 재가입 |
 | 가입 시 "서버의 이메일 인증 설정이 켜져 있어..." | Authentication > Email > **Confirm email** 을 끈다 |
 | `column profiles.login_id does not exist` | `0004_login_id.sql` 미실행 |
+| SQL Editor 에서 `42601 syntax error at or near "update"` | `Limit 100 rows` 를 `No limit` 으로 바꾼다 |
 | 쿼리가 빈 배열만 반환 | RLS 차단. `0002_rls.sql` 실행 여부와 본인 `status = 'active'` 확인 |
 | `infinite recursion detected in policy` (42P17) | 정책에서 `profiles` 를 직접 SELECT 함. 헬퍼 함수를 쓸 것 |
 | `permission denied for table profiles` | 의도된 동작. `role`/`status` 는 RPC 로만 변경 가능 |

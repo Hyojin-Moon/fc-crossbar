@@ -5,8 +5,16 @@ import 'react-native-url-polyfill/auto';
 
 import type { Database } from '@/types/database';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+/**
+ * 긴 값을 셸이나 EAS 대시보드에 붙여 넣다가 줄바꿈이 끼어드는 일이 잦다.
+ * 실제로 EAS 에 저장된 anon key 가 143번째 문자에서 개행으로 쪼개져
+ * "Unexpected char 0x0a at 150 in Authorization value" 로 로그인이 전부 실패했다.
+ * URL 과 JWT 에는 공백 문자가 들어갈 수 없으므로 모두 제거한다.
+ */
+const clean = (value: string | undefined) => value?.replace(/\s/g, '') || undefined;
+
+const supabaseUrl = clean(process.env.EXPO_PUBLIC_SUPABASE_URL);
+const supabaseAnonKey = clean(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(

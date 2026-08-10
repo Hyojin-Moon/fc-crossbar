@@ -546,4 +546,5 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 | `infinite recursion detected in policy` (42P17) | 정책에서 `profiles` 를 직접 SELECT 함. 헬퍼 함수를 쓸 것 |
 | `permission denied for table profiles` | 의도된 동작. `role`/`status` 는 RPC 로만 변경 가능 |
 | APK 설치 후 실행하자마자 종료 | 빌드 시 환경변수 누락. `eas env:list` 로 확인 |
+| `Unexpected char 0x0a at N in Authorization value` | EAS 에 저장된 anon key 안에 줄바꿈이 섞였다. `eas env:pull --environment preview` 로 실제 바이트를 확인한다. `src/lib/supabase.ts` 가 공백을 제거하도록 방어해 두었지만, 값 자체도 다시 넣는 게 맞다 |
 | 새 APK 가 "설치되지 않음" | `android.versionCode` 를 올리지 않았거나 서명 키가 다름 |

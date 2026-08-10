@@ -10,7 +10,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeDbError } from '@/lib/errors';
 import { formatWon } from '@/lib/finance';
-import { loadSettings, saveSetting } from '@/lib/settings';
+import { loadSettings, saveSettings } from '@/lib/settings';
 
 export default function TeamSettingsScreen() {
   const { isSuperAdmin } = useAuth();
@@ -42,9 +42,11 @@ export default function TeamSettingsScreen() {
 
     setSaving(true);
     try {
-      await saveSetting('teamName', teamName.trim());
-      await saveSetting('monthlyFeeAmount', Number(amount));
-      await saveSetting('requireApproval', requireApproval);
+      await saveSettings({
+        teamName: teamName.trim(),
+        monthlyFeeAmount: Number(amount),
+        requireApproval,
+      });
       toast('설정을 저장했습니다.');
       router.back();
     } catch (e) {

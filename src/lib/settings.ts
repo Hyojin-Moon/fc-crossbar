@@ -27,6 +27,11 @@ const KEYS = {
 let cache: AppSettings | null = null;
 let inflight: Promise<AppSettings> | null = null;
 
+// 홈 화면처럼 탭에 이미 마운트된 화면은 effect 가 다시 돌지 않는다.
+// 캐시만 비우면 아무도 다시 읽지 않으므로, 값이 바뀌면 구독자에게 직접 알린다.
+type Listener = (next: AppSettings) => void;
+const listeners = new Set<Listener>();
+
 async function fetchSettings(): Promise<AppSettings> {
   const { data, error } = await supabase.from('app_settings').select('key, value');
   if (error || !data) {
@@ -54,9 +59,12 @@ export async function loadSettings(): Promise<AppSettings> {
   return inflight;
 }
 
-/** 설정을 바꾼 뒤 호출해서 캐시를 비운다. */
+/** 설정을 바꾼 뒤 호출한다. 캐시를 비우고 다시 읽어 구독 중인 화면을 갱신한다. */
 export function invalidateSettings() {
   cache = null;
+  void loadSettings().then((next) => {
+    for (const listener of listeners) listener(next);
+  });
 }
 
 export function useSettings() {
@@ -64,22 +72,35 @@ export function useSettings() {
 
   useEffect(() => {
     let alive = true;
+    const listener: Listener = (next) => {
+      if (alive) setSettings(next);
+    };
+    listeners.add(listener);
     void loadSettings().then((next) => {
       if (alive) setSettings(next);
     });
     return () => {
       alive = false;
+      listeners.delete(listener);
     };
   }, []);
 
   return settings;
 }
 
-/** super_admin 전용. RLS 가 다시 검사한다. */
-export async function saveSetting(key: keyof typeof KEYS, value: unknown) {
-  const { error } = await supabase
-    .from('app_settings')
-    .upsert({ key: KEYS[key], value }, { onConflict: 'key' });
+/**
+ * super_admin 전용 (RLS 가 다시 검사한다).
+ * 세 값을 한 번의 요청으로 저장하고 갱신을 한 번만 알린다.
+ */
+export async function saveSettings(next: AppSettings) {
+  const { error } = await supabase.from('app_settings').upsert(
+    [
+      { key: KEYS.teamName, value: next.teamName },
+      { key: KEYS.monthlyFeeAmount, value: next.monthlyFeeAmount },
+      { key: KEYS.requireApproval, value: next.requireApproval },
+    ],
+    { onConflict: 'key' }
+  );
   if (error) throw error;
   invalidateSettings();
 }

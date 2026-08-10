@@ -409,6 +409,10 @@ RLS 를 실제로 확인할 수 있다. 세 마이그레이션 모두 **재실�
 `src/constants/theme.ts` 의 토큰만 쓴다 (흰 배경 + 다크 네이비, 다크모드 미지원 —
 `app.json` 의 `userInterfaceStyle: "light"`). 공용 컴포넌트는 `src/components/ui.tsx`.
 
+`app_settings` 처럼 모듈 레벨 캐시를 쓰는 값은 **캐시만 비우면 안 된다.**
+탭에 이미 마운트된 화면(홈 등)은 effect 가 다시 돌지 않아 갱신되지 않는다.
+`settings.ts` 는 구독자 집합을 두고 `invalidateSettings()` 에서 직접 알린다.
+
 투표 UX 가 이 앱의 존재 이유다: **버튼 1탭에 즉시 저장 + Toast**, 확인 다이얼로그를 끼우지 않는다.
 앱 켜서 투표까지 10초를 넘기지 않는 것이 설계 기준이다.
 

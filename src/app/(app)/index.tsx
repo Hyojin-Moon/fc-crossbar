@@ -16,11 +16,13 @@ import {
   type EventWithVotes,
 } from '@/lib/events';
 import { useActiveMembers } from '@/lib/members';
+import { useSettings } from '@/lib/settings';
 import { useVoteOptions } from '@/lib/vote-options';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
   const { members } = useActiveMembers();
+  const settings = useSettings();
   const voteOptions = useVoteOptions();
 
   const [upcoming, setUpcoming] = useState<EventWithVotes[]>([]);
@@ -57,7 +59,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader
-        title="FC Crossbar"
+        title={settings.teamName}
         subtitle={`${profile?.nickname || profile?.name}님, 반갑습니다`}
       />
       <ScrollView

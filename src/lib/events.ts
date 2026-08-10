@@ -94,6 +94,34 @@ export async function fetchPastEvents(limit = 30): Promise<EventWithVotes[]> {
   return (data ?? []) as unknown as EventWithVotes[];
 }
 
+/**
+ * 참석률 통계에 들어가는 일정. get_attendance_stats() 와 같은 조건을 쓴다.
+ *  - include_attendance_stats = true
+ *  - 취소된 일정 제외
+ *  - 아직 치르지 않은 일정 제외
+ */
+export async function fetchStatsEvents(
+  from: string | null,
+  to: string | null
+): Promise<EventWithVotes[]> {
+  const today = todayLocalISO();
+  const upperBound = to && to < today ? to : today;
+
+  let query = supabase
+    .from('events')
+    .select(EVENT_SELECT)
+    .eq('include_attendance_stats', true)
+    .neq('status', 'cancelled')
+    .lte('event_date', upperBound)
+    .order('event_date', { ascending: true });
+
+  if (from) query = query.gte('event_date', from);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as EventWithVotes[];
+}
+
 export async function fetchEvent(id: string): Promise<EventWithVotes | null> {
   const { data, error } = await supabase
     .from('events')

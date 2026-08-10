@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
   field: { gap: Spacing.one },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   input: {
+    minWidth: 0,
     minHeight: 50,
     borderWidth: 1,
     borderColor: Colors.border,

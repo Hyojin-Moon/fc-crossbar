@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   pair: { flexDirection: 'row', gap: Spacing.two },
-  pairItem: { flex: 1 },
+  pairItem: { flex: 1, minWidth: 0 },
   multiline: { minHeight: 84, paddingTop: Spacing.two, textAlignVertical: 'top' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   switchText: { flex: 1, gap: 2 },

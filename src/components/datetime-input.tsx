@@ -86,6 +86,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   input: {
     flex: 1,
+    // 웹에서 <input> 은 고유 너비를 가지며 flex 아이템의 min-width 기본값이 auto 라
+    // 이걸 0 으로 내려주지 않으면 두 칸 배치에서 컨테이너를 밀고 나간다.
+    minWidth: 0,
     minHeight: 50,
     borderWidth: 1,
     borderColor: Colors.border,

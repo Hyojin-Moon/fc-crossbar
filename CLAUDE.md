@@ -17,13 +17,13 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 |---|---|---|
 | 1 | 프로젝트 세팅, Supabase 연결, DB 스키마, RLS, Auth | ✅ 완료 |
 | 2 | 회원가입 / 로그인 / 자동 로그인 | ✅ 완료 (Phase 1 에 포함) |
-| 3 | 일정 및 참석 투표 | ⬜ 예정 |
+| 3 | 일정 및 참석 투표 | ✅ 완료 |
 | 4 | 참석률 통계 | ⬜ 예정 |
 | 5 | 관리자 회비 관리 | ⬜ 예정 |
 | 6 | Excel / CSV Import·Export | ⬜ 예정 |
 | 7 | APK 빌드 및 배포 | ⬜ 예정 (빌드 설정은 준비됨) |
 
-`src/app/(app)/{events,stats,finance}.tsx` 는 아직 `PlaceholderScreen` 자리표시자다.
+`src/app/(app)/{stats,finance}.tsx` 는 아직 `PlaceholderScreen` 자리표시자다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
 
 ## 명령어
@@ -151,13 +151,17 @@ where  login_id = '본인아이디';
     │   ├── index.tsx         진입점. 세션 유무로 분기
     │   ├── (auth)/           sign-in · sign-up
     │   └── (app)/            인증 가드 + 역할별 Bottom Tabs
-    │       ├── index.tsx     홈
-    │       ├── events.tsx    일정 / 투표        (Phase 3)
+    │       ├── index.tsx     홈 (진행 중인 투표 카드 + 예정·최근 일정)
+    │       ├── events/       일정 탭 (안에 Stack)
+    │       │   ├── index.tsx  목록 (예정 / 지난 경기)
+    │       │   ├── [id].tsx   상세 · 참석 현황 명단 · 관리자 작업
+    │       │   └── form.tsx   생성/수정 (?id= 있으면 수정) · 관리자 전용
     │       ├── stats.tsx     참석률 통계        (Phase 4)
     │       ├── finance.tsx   회비 · 관리자 전용 (Phase 5·6)
     │       ├── admin.tsx     관리 · 관리자 전용 (Phase 5)
     │       └── profile.tsx   내 정보 / 로그아웃
-    ├── lib/                  supabase · auth-context · errors
+    ├── lib/                  supabase · auth-context · errors · events · members
+    │                         dates · login-id · vote-options
     ├── components/           공용 UI (버튼 · 입력 · 카드 · 헤더)
     ├── constants/theme.ts    색상 · 여백 토큰
     └── types/database.ts     DB 스키마 TypeScript 타입
@@ -239,6 +243,37 @@ refresh 최종 실패 시 `SIGNED_OUT` 이 와서 자동으로 로그인 화면�
 |---|---|
 | member | 홈 · 일정 · 통계 · 내 정보 |
 | admin / super_admin | 홈 · 일정 · 통계 · 회비 · 관리 (내 정보는 "관리"에서 진입) |
+
+## 일정 · 투표 (Phase 3)
+
+**투표 창 상태는 `getVoteWindow()` 하나로만 판단한다** (`src/lib/events.ts`).
+`is_vote_open()` SQL 함수와 같은 세 조건(`status`, `vote_open_at`, `vote_deadline`)을 쓴다.
+화면과 DB 판단이 갈리면 "버튼은 눌리는데 저장은 RLS 로 거부되는" 상태가 된다.
+세 상태(`before` / `open` / `closed`)를 모두 렌더링해야 한다 — 샘플 데이터에 셋 다 들어 있다.
+
+**투표 마감은 `status = 'closed'` 로만 한다.** `vote_deadline` 을 과거로 당기거나 투표를
+지우지 않는다. `is_vote_open()` 이 읽는 값이 `status` 이고, 마감 후에도 참석 현황은 보여야 한다.
+
+**투표 버튼은 `events.allowed_votes` × `vote_options` 로 그린다.** 참석/불참/미정을
+하드코딩하지 않는다 (`optionsForEvent()`). 참석률 집계 기준은 `counts_as_attendance`.
+
+**저장은 upsert** (`event_votes` 의 `event_id,member_id` UNIQUE). PostgREST upsert 는
+`INSERT ... ON CONFLICT DO UPDATE` 라서 INSERT 의 WITH CHECK 와 UPDATE 의 USING/WITH CHECK 를
+모두 통과해야 한다. 6가지 경로(최초 투표 / 변경 / 시작 전 / 마감 후 / 남의 투표 / 삭제)를
+Postgres 에서 검증했다.
+
+**날짜는 반드시 `src/lib/dates.ts` 를 쓴다.** `event_date` 는 `date` 컬럼이라 "한국 달력의
+하루"를 뜻한다. `new Date().toISOString().slice(0,10)` 으로 오늘을 구하면 00:00~09:00 KST
+사이에 오늘 경기가 '지난 경기'로 분류된다. `todayLocalISO()` 를 쓴다.
+SQL 에서 `(date + time)::timestamptz` 도 같은 함정이다 (세션 TZ 가 UTC) —
+`(date + time) at time zone 'Asia/Seoul'` 로 쓴다.
+
+**화면 갱신은 `useFocusEffect`** 로 한다. 캐시 계층이 없어서 홈 → 상세 → 투표 → 뒤로 갈 때
+포커스마다 다시 읽어야 인원수가 맞는다.
+
+**주의**: 임베드 select(`events` + `votes:event_votes(...)`)로 센 인원수는 RLS 로 필터된
+결과다. `attendee_list_visible = false` 로 두면 회원에게는 본인 투표만 보여서 "참석 1명"이
+된다. 명단 비공개 기능을 실제로 쓸 거라면 인원수를 RPC 로 옮겨야 한다.
 
 ## 데이터베이스
 
@@ -414,6 +449,8 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 | 가입 시 "서버의 이메일 인증 설정이 켜져 있어..." | Authentication > Email > **Confirm email** 을 끈다 |
 | `column profiles.login_id does not exist` | `0004_login_id.sql` 미실행 |
 | SQL Editor 에서 `42601 syntax error at or near "update"` | `Limit 100 rows` 를 `No limit` 으로 바꾼다 |
+| 라우트가 중복됐다는 개발 서버 에러 | `foo.tsx` 와 `foo/` 디렉터리는 공존할 수 없다. `tsc` 는 못 잡는다 |
+| 투표 버튼을 눌렀는데 `row-level security policy` 토스트 | 투표 기간이 아니다. `getVoteWindow()` 가 `open` 인지 확인 |
 | 쿼리가 빈 배열만 반환 | RLS 차단. `0002_rls.sql` 실행 여부와 본인 `status = 'active'` 확인 |
 | `infinite recursion detected in policy` (42P17) | 정책에서 `profiles` 를 직접 SELECT 함. 헬퍼 함수를 쓸 것 |
 | `permission denied for table profiles` | 의도된 동작. `role`/`status` 는 RPC 로만 변경 가능 |

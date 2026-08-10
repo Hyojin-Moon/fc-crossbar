@@ -54,8 +54,8 @@ begin
       (current_date - (idx * 7))::date,
       '20:00', '22:00',
       '크로스바 풋살파크', '서울시 어딘가 123',
-      (current_date - (idx * 7) - 6)::timestamptz,
-      (current_date - (idx * 7) - 1 + time '18:00')::timestamptz,
+      ((current_date - (idx * 7) - 6)::timestamp at time zone 'Asia/Seoul'),
+      ((current_date - (idx * 7) - 1 + time '18:00') at time zone 'Asia/Seoul'),
       22, 'closed', admin_profile
     )
     on conflict do nothing;
@@ -68,11 +68,12 @@ begin
   ) values
     ('이번 주 경기', (current_date + 3), '20:00', '22:00',
      '크로스바 풋살파크', '서울시 어딘가 123', 'https://map.naver.com',
-     '조끼 챙겨오세요', now(), (current_date + 2 + time '18:00')::timestamptz,
+     '조끼 챙겨오세요', now(), ((current_date + 2 + time '18:00') at time zone 'Asia/Seoul'),
      22, 'open', admin_profile),
     ('다음 주 경기', (current_date + 10), '20:00', '22:00',
      '한강 축구장', '서울시 어딘가 456', null,
-     null, (current_date + 4)::timestamptz, (current_date + 9 + time '18:00')::timestamptz,
+     null, ((current_date + 4)::timestamp at time zone 'Asia/Seoul'),
+     ((current_date + 9 + time '18:00') at time zone 'Asia/Seoul'),
      22, 'open', admin_profile)
   on conflict do nothing;
 

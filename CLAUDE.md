@@ -83,13 +83,16 @@ Region 과 Postgres Type 은 생성 후 변경할 수 없다.
 | 1 | `supabase/migrations/0001_schema.sql` | 테이블 · 인덱스 · 헬퍼함수 · 트리거 · 관리자 RPC | 프로젝트 생성 직후 |
 | 2 | `supabase/migrations/0002_rls.sql` | RLS 정책 + 테이블 권한 | 이어서 바로 |
 | 3 | `supabase/migrations/0003_seed.sql` | Super Admin 지정 + 샘플 데이터 | **앱에서 회원가입한 뒤** |
+| — | `supabase/migrations/0004_login_id.sql` | `profiles.login_id` 추가 | **0001 을 이미 실행해 둔 DB 에서만.** 내용이 0001 에 반영되어 있어 새로 만드는 DB 는 불필요 |
 
-## 3. 인증 설정
+## 3. 인증 설정 — Confirm email 은 반드시 꺼야 한다
 
-**Authentication > Sign In / Providers > Email**
+**Authentication > Sign In / Providers > Email** → **Confirm email** **OFF**
 
-- 팀 내부용이라 이메일 인증 없이 바로 쓰려면 **Confirm email** 을 **끈다**.
-- 켜 두면 가입 후 메일 인증을 해야 로그인된다. (무료 티어는 시간당 메일 발송량 제한이 있다)
+선택 사항이 아니다. 로그인이 아이디 기반이라 계정 이메일이 `<아이디>@fccrossbar.local`
+이고 실제 수신 가능한 주소가 아니다. 켜 두면 **아무도 가입을 완료할 수 없다.**
+그 상태에서 가입을 시도하면 앱이 "서버의 이메일 인증 설정이 켜져 있어 가입을 완료할 수
+없습니다" 라고 안내한다 (`sign-up.tsx` 의 `needsEmailConfirm` 분기).
 
 ## 4. 키 복사 후 로컬 실행
 
@@ -187,6 +190,27 @@ where  u.id = p.user_id
 반드시 `current_profile_id()` / `current_user_role()` / `is_admin()` / `is_super_admin()`
 (`SECURITY DEFINER`, `search_path` 고정) 헬퍼를 쓴다.
 
+## 로그인은 아이디 기반이다 (이메일 아님)
+
+팀원이 이메일을 타이핑하지 않도록, 화면에서는 **아이디 + 비밀번호**만 받는다.
+Supabase Auth 가 email 형식을 요구하므로 `src/lib/login-id.ts` 가 아이디 뒤에
+`@fccrossbar.local` 을 붙여 계정을 만든다. 메일 발송도, 인증도 하지 않는다.
+(Supabase 가 이 도메인을 받아주는지는 실제 프로젝트에서 확인했다)
+
+- 아이디 규칙: 영문 소문자·숫자로 시작, `a-z0-9._-`, 3~20자 (`validateLoginId`)
+- 아이디는 항상 소문자로 정규화한다 (`normalizeLoginId`) — 대소문자 구분 안 함
+- 중복은 `auth.users.email` UNIQUE 가 먼저 잡아 `User already registered` 를 돌려준다.
+  `profiles.login_id` 의 unique index 는 안전망이다.
+- `profiles.login_id` 는 화면 표시용 사본이다. 클라이언트는 `auth.users` 를 읽을 수
+  없으므로, 관리자 화면에서 아이디를 보여주려면 이 컬럼이 필요하다.
+  사용자가 바꿀 수 없다 (컬럼 GRANT 에 없음).
+- 도메인 문자열은 `src/lib/login-id.ts` 와 SQL(`handle_new_user`, `0004_login_id.sql`)
+  **양쪽에 하드코딩**되어 있다. 바꾸려면 둘 다 고쳐야 한다.
+
+**비밀번호 재설정은 자동화할 수 없다** (받을 메일함이 없다).
+잊은 사람은 Supabase Dashboard → Authentication → Users → 해당 계정 → 비밀번호 변경으로
+super_admin 이 처리한다. Phase 5 에서 관리자용 초기화 기능을 넣을지는 미정.
+
 ## 인증 · 라우팅 흐름
 
 `src/lib/auth-context.tsx` 가 세션과 프로필을 들고 있는 유일한 소스다.
@@ -217,7 +241,7 @@ refresh 최종 실패 시 `SIGNED_OUT` 이 와서 자동으로 로그인 화면�
 
 | 테이블 | 설명 | 접근 |
 |---|---|---|
-| `profiles` | 회원 (`id` 와 `user_id` 분리) | 활성 회원 조회 가능 |
+| `profiles` | 회원 (`id` 와 `user_id` 분리, `login_id` = 로그인 아이디) | 활성 회원 조회 가능 |
 | `events` | 경기 / 모임 | 조회: 전체 · 쓰기: 관리자 |
 | `event_votes` | 참석 투표 (`event_id + member_id` UNIQUE) | 본인 투표만 쓰기 |
 | `vote_options` | 투표 선택지 (참석/불참/미정 + 확장용 지각/조기귀가/게스트) | 조회: 전체 |
@@ -384,6 +408,8 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 |---|---|
 | 앱 실행 시 `EXPO_PUBLIC_SUPABASE_URL ... 설정되지 않았습니다` | `.env` 가 없거나 비어 있음. 채운 뒤 `npx expo start -c` 로 캐시 초기화 재시작 |
 | 로그인은 되는데 "회원 정보를 찾을 수 없습니다" | `0001_schema.sql` 의 `on_auth_user_created` 트리거 미적용. SQL 재실행 후 재가입 |
+| 가입 시 "서버의 이메일 인증 설정이 켜져 있어..." | Authentication > Email > **Confirm email** 을 끈다 |
+| `column profiles.login_id does not exist` | `0004_login_id.sql` 미실행 |
 | 쿼리가 빈 배열만 반환 | RLS 차단. `0002_rls.sql` 실행 여부와 본인 `status = 'active'` 확인 |
 | `infinite recursion detected in policy` (42P17) | 정책에서 `profiles` 를 직접 SELECT 함. 헬퍼 함수를 쓸 것 |
 | `permission denied for table profiles` | 의도된 동작. `role`/`status` 는 RPC 로만 변경 가능 |

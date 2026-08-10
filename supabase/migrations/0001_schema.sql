@@ -34,9 +34,14 @@ on conflict (code) do nothing;
 -- 2. profiles
 --    id 와 user_id 를 분리한다. 다른 테이블의 FK 는 모두 profiles.id 를 가리킨다.
 -- ---------------------------------------------------------------------
+-- 로그인은 이메일이 아니라 아이디로 한다. 클라이언트가 아이디 뒤에
+-- @fccrossbar.local 을 붙여 Supabase Auth 계정을 만든다. (실제 메일 발송 없음)
+-- login_id 는 그 아이디를 화면에 보여주기 위한 사본이다. auth.users 는 클라이언트가
+-- 읽을 수 없으므로 이 컬럼이 없으면 관리자 화면에서 아이디를 표시할 수 없다.
 create table if not exists public.profiles (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null unique references auth.users(id) on delete cascade,
+  login_id   text unique,
   name       text not null,
   nickname   text,
   phone      text,
@@ -276,9 +281,12 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  insert into public.profiles (user_id, name, nickname, phone)
+  insert into public.profiles (user_id, login_id, name, nickname, phone)
   values (
     new.id,
+    -- 내부 도메인으로 만든 계정만 아이디를 뽑아 둔다. 실제 이메일 가입이면 null.
+    case when new.email like '%@fccrossbar.local'
+         then split_part(new.email, '@', 1) end,
     coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)),
     nullif(new.raw_user_meta_data ->> 'nickname', ''),
     nullif(new.raw_user_meta_data ->> 'phone', '')

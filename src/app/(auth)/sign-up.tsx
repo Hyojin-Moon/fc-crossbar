@@ -15,11 +15,12 @@ import { AppButton, Field } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeAuthError } from '@/lib/errors';
+import { validateLoginId } from '@/lib/login-id';
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
   const [form, setForm] = useState({
-    email: '',
+    loginId: '',
     password: '',
     passwordConfirm: '',
     name: '',
@@ -32,8 +33,8 @@ export default function SignUpScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const validate = () => {
-    if (!form.email.trim()) return '이메일을 입력해 주세요.';
-    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) return '이메일 형식이 올바르지 않습니다.';
+    const loginIdProblem = validateLoginId(form.loginId);
+    if (loginIdProblem) return loginIdProblem;
     if (form.password.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
     if (form.password !== form.passwordConfirm) return '비밀번호가 일치하지 않습니다.';
     if (!form.name.trim()) return '이름을 입력해 주세요.';
@@ -51,13 +52,16 @@ export default function SignUpScreen() {
     try {
       const { needsEmailConfirm } = await signUp(form);
       if (needsEmailConfirm) {
+        // 아이디 로그인 방식에서는 실제 메일함이 없으므로 인증 메일을 받을 수 없다.
+        // Supabase 의 Confirm email 설정이 켜져 있다는 뜻이라 관리자가 꺼 줘야 한다.
         Alert.alert(
-          '가입 신청 완료',
-          '입력한 이메일로 인증 메일을 보냈습니다. 인증 후 로그인해 주세요.',
+          '가입 처리 불가',
+          '서버의 이메일 인증 설정이 켜져 있어 가입을 완료할 수 없습니다.\n' +
+            '관리자에게 문의해 주세요.',
           [{ text: '확인', onPress: () => router.replace('/(auth)/sign-in') }]
         );
       }
-      // 이메일 인증이 꺼져 있으면 바로 세션이 생기고 (auth)/_layout 이 홈으로 보낸다.
+      // 정상 설정이면 바로 세션이 생기고 (auth)/_layout 이 홈으로 보낸다.
     } catch (e) {
       Alert.alert('가입 실패', describeAuthError(e));
     } finally {
@@ -75,12 +79,14 @@ export default function SignUpScreen() {
 
           <View style={styles.form}>
             <Field
-              label="이메일"
-              value={form.email}
-              onChangeText={set('email')}
+              label="아이디"
+              value={form.loginId}
+              onChangeText={set('loginId')}
               autoCapitalize="none"
-              keyboardType="email-address"
-              placeholder="you@example.com"
+              autoCorrect={false}
+              autoComplete="username"
+              placeholder="영문 소문자 · 숫자 3~20자"
+              hint="로그인할 때 쓰는 아이디입니다. 나중에 바꿀 수 없습니다."
             />
             <Field
               label="비밀번호"

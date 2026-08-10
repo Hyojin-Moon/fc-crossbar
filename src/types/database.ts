@@ -17,6 +17,8 @@ export type VoteCode = 'attend' | 'absent' | 'maybe' | 'late' | 'early_leave' | 
 export type Profile = {
   id: string;
   user_id: string;
+  /** 로그인 아이디. 내부적으로 `<login_id>@fccrossbar.local` 계정이 만들어진다. */
+  login_id: string | null;
   name: string;
   nickname: string | null;
   phone: string | null;

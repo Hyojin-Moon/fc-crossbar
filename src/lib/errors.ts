@@ -1,11 +1,14 @@
 /** Supabase 에러 메시지를 한국어로 바꿔 준다. 매칭 안 되면 원문을 그대로 보여준다. */
+// 로그인은 아이디 기반이지만 Supabase 는 내부적으로 email 을 쓰므로
+// 메시지에 '이메일' 이라는 단어가 그대로 나온다. 아이디 기준으로 바꿔서 보여준다.
 const AUTH_MESSAGES: Record<string, string> = {
-  'Invalid login credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
-  'Email not confirmed': '이메일 인증이 완료되지 않았습니다. 메일함을 확인해 주세요.',
-  'User already registered': '이미 가입된 이메일입니다.',
+  'Invalid login credentials': '아이디 또는 비밀번호가 올바르지 않습니다.',
+  'Email not confirmed': '서버의 이메일 인증 설정이 켜져 있습니다. 관리자에게 문의해 주세요.',
+  'User already registered': '이미 사용 중인 아이디입니다.',
   'Password should be at least 6 characters.': '비밀번호는 6자 이상이어야 합니다.',
-  'Unable to validate email address: invalid format': '이메일 형식이 올바르지 않습니다.',
+  'Unable to validate email address: invalid format': '아이디 형식이 올바르지 않습니다.',
   'Network request failed': '네트워크에 연결할 수 없습니다.',
+  'Anonymous sign-ins are disabled': '아이디를 입력해 주세요.',
 };
 
 export function describeAuthError(error: unknown): string {

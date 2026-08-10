@@ -19,18 +19,18 @@ import { describeAuthError } from '@/lib/errors';
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert('입력 확인', '이메일과 비밀번호를 입력해 주세요.');
+    if (!loginId.trim() || !password) {
+      Alert.alert('입력 확인', '아이디와 비밀번호를 입력해 주세요.');
       return;
     }
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      await signIn(loginId, password);
       // 로그인 성공 시 (auth)/_layout 의 Redirect 가 홈으로 보낸다.
     } catch (e) {
       Alert.alert('로그인 실패', describeAuthError(e));
@@ -55,13 +55,13 @@ export default function SignInScreen() {
 
           <View style={styles.form}>
             <Field
-              label="이메일"
-              value={email}
-              onChangeText={setEmail}
+              label="아이디"
+              value={loginId}
+              onChangeText={setLoginId}
               autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              placeholder="you@example.com"
+              autoCorrect={false}
+              autoComplete="username"
+              placeholder="아이디"
             />
             <Field
               label="비밀번호"

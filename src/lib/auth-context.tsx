@@ -10,11 +10,12 @@ import {
   type ReactNode,
 } from 'react';
 
+import { loginIdToEmail } from '@/lib/login-id';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types/database';
 
 export type SignUpInput = {
-  email: string;
+  loginId: string;
   password: string;
   name: string;
   nickname?: string;
@@ -30,7 +31,7 @@ type AuthContextValue = {
   profileLoading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (loginId: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<{ needsEmailConfirm: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -100,9 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadProfile]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (loginId: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: loginIdToEmail(loginId),
       password,
     });
     if (error) throw error;
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (input: SignUpInput) => {
     const { data, error } = await supabase.auth.signUp({
-      email: input.email.trim(),
+      email: loginIdToEmail(input.loginId),
       password: input.password,
       // handle_new_user 트리거가 이 값으로 profiles 행을 만든다.
       options: {

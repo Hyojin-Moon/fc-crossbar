@@ -6,6 +6,7 @@ import { AppButton, Card, Field, SectionTitle } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeDbError } from '@/lib/errors';
+import { emailToLoginId } from '@/lib/login-id';
 import { supabase } from '@/lib/supabase';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -53,7 +54,10 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="내 정보" subtitle={session?.user.email ?? undefined} />
+      <ScreenHeader
+        title="내 정보"
+        subtitle={profile?.login_id ?? emailToLoginId(session?.user.email)}
+      />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card>
           <SectionTitle>프로필</SectionTitle>
@@ -65,6 +69,12 @@ export default function ProfileScreen() {
 
         <Card>
           <SectionTitle>계정</SectionTitle>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>아이디</Text>
+            <Text style={styles.rowValue}>
+              {profile?.login_id ?? emailToLoginId(session?.user.email)}
+            </Text>
+          </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>권한</Text>
             <Text style={styles.rowValue}>{ROLE_LABEL[profile?.role ?? 'member']}</Text>

@@ -49,6 +49,12 @@
         "projectId": "168f1d09-510d-4b9b-ae2b-04876d366391"
       }
     },
-    "owner": "moon_dev"
+    "owner": "moon_dev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/168f1d09-510d-4b9b-ae2b-04876d366391"
+    }
   }
 }

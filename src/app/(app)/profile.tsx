@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
+import { useToast } from '@/components/toast';
 import { AppButton, Card, Field, SectionTitle } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
+import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
 import { emailToLoginId } from '@/lib/login-id';
 import { supabase } from '@/lib/supabase';
@@ -17,15 +19,18 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(profile?.name ?? '');
   const [nickname, setNickname] = useState(profile?.nickname ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [saving, setSaving] = useState(false);
 
+  const loginId = profile?.login_id ?? emailToLoginId(session?.user.email);
+
   const onSave = async () => {
     if (!profile) return;
     if (!name.trim()) {
-      Alert.alert('입력 확인', '이름을 입력해 주세요.');
+      toast('이름을 입력해 주세요.', 'error');
       return;
     }
 
@@ -38,26 +43,31 @@ export default function ProfileScreen() {
     setSaving(false);
 
     if (error) {
-      Alert.alert('저장 실패', describeDbError(error));
+      toast(describeDbError(error), 'error');
       return;
     }
     await refreshProfile();
-    Alert.alert('저장 완료', '프로필이 수정되었습니다.');
+    toast('프로필이 수정되었습니다.');
   };
 
-  const onSignOut = () => {
-    Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      { text: '로그아웃', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const onSignOut = async () => {
+    const ok = await confirmAsync({
+      title: '로그아웃',
+      message: '로그아웃 하시겠습니까?',
+      confirmLabel: '로그아웃',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await signOut();
+    } catch (e) {
+      toast(describeDbError(e), 'error');
+    }
   };
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader
-        title="내 정보"
-        subtitle={profile?.login_id ?? emailToLoginId(session?.user.email)}
-      />
+      <ScreenHeader title="내 정보" subtitle={loginId} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card>
           <SectionTitle>프로필</SectionTitle>
@@ -71,9 +81,7 @@ export default function ProfileScreen() {
           <SectionTitle>계정</SectionTitle>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>아이디</Text>
-            <Text style={styles.rowValue}>
-              {profile?.login_id ?? emailToLoginId(session?.user.email)}
-            </Text>
+            <Text style={styles.rowValue}>{loginId}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>권한</Text>
@@ -83,7 +91,12 @@ export default function ProfileScreen() {
             <Text style={styles.rowLabel}>상태</Text>
             <Text style={styles.rowValue}>{profile?.status ?? '-'}</Text>
           </View>
-          <AppButton label="로그아웃" variant="outline" color={Colors.danger} onPress={onSignOut} />
+          <AppButton
+            label="로그아웃"
+            variant="outline"
+            color={Colors.danger}
+            onPress={() => void onSignOut()}
+          />
         </Card>
       </ScrollView>
     </View>

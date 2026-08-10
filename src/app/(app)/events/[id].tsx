@@ -1,15 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
@@ -17,6 +9,7 @@ import { AppButton, Card, FullScreenLoader, Muted, SectionTitle } from '@/compon
 import { VoteCard } from '@/components/vote-card';
 import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
+import { confirmAsync } from '@/lib/confirm';
 import { formatDeadline, formatEventDateLong, formatTimeRange } from '@/lib/dates';
 import {
   deleteEvent,
@@ -95,48 +88,46 @@ export default function EventDetailScreen() {
     },
   ];
 
-  const confirmClose = () => {
+  const confirmClose = async () => {
     const nextStatus = event.status === 'open' ? 'closed' : 'open';
     const verb = nextStatus === 'closed' ? '마감' : '재개';
-    Alert.alert(`투표 ${verb}`, `이 일정의 투표를 ${verb}하시겠습니까?`, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: verb,
-        onPress: async () => {
-          setBusy(true);
-          try {
-            await setEventStatus(event.id, nextStatus);
-            toast(`투표를 ${verb}했습니다.`);
-            await load();
-          } catch (e) {
-            toast(describeDbError(e), 'error');
-          } finally {
-            setBusy(false);
-          }
-        },
-      },
-    ]);
+    const ok = await confirmAsync({
+      title: `투표 ${verb}`,
+      message: `이 일정의 투표를 ${verb}하시겠습니까?`,
+      confirmLabel: verb,
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      await setEventStatus(event.id, nextStatus);
+      toast(`투표를 ${verb}했습니다.`);
+      await load();
+    } catch (e) {
+      toast(describeDbError(e), 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const confirmDelete = () => {
-    Alert.alert('일정 삭제', `'${event.title}'을(를) 삭제합니다. 투표 기록도 함께 삭제됩니다.`, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          setBusy(true);
-          try {
-            await deleteEvent(event.id);
-            toast('삭제했습니다.');
-            router.back();
-          } catch (e) {
-            toast(describeDbError(e), 'error');
-            setBusy(false);
-          }
-        },
-      },
-    ]);
+  const confirmDelete = async () => {
+    const ok = await confirmAsync({
+      title: '일정 삭제',
+      message: `'${event.title}'을(를) 삭제합니다. 투표 기록도 함께 삭제됩니다.`,
+      confirmLabel: '삭제',
+      destructive: true,
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      await deleteEvent(event.id);
+      toast('삭제했습니다.');
+      router.back();
+    } catch (e) {
+      toast(describeDbError(e), 'error');
+      setBusy(false);
+    }
   };
 
   return (
@@ -236,14 +227,14 @@ export default function EventDetailScreen() {
               variant="outline"
               color={event.status === 'open' ? Colors.warning : Colors.accent}
               disabled={busy}
-              onPress={confirmClose}
+              onPress={() => void confirmClose()}
             />
             <AppButton
               label="일정 삭제"
               variant="outline"
               color={Colors.danger}
               disabled={busy}
-              onPress={confirmDelete}
+              onPress={() => void confirmDelete()}
             />
             {window === 'before' ? (
               <Muted>투표 시작 시각이 아직 오지 않아 회원은 투표할 수 없습니다.</Muted>

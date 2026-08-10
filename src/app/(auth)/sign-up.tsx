@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useToast } from '@/components/toast';
 import { AppButton, Field } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
@@ -19,6 +19,7 @@ import { validateLoginId } from '@/lib/login-id';
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
+  const toast = useToast();
   const [form, setForm] = useState({
     loginId: '',
     password: '',
@@ -44,7 +45,7 @@ export default function SignUpScreen() {
   const onSubmit = async () => {
     const problem = validate();
     if (problem) {
-      Alert.alert('입력 확인', problem);
+      toast(problem, 'error');
       return;
     }
 
@@ -54,16 +55,12 @@ export default function SignUpScreen() {
       if (needsEmailConfirm) {
         // 아이디 로그인 방식에서는 실제 메일함이 없으므로 인증 메일을 받을 수 없다.
         // Supabase 의 Confirm email 설정이 켜져 있다는 뜻이라 관리자가 꺼 줘야 한다.
-        Alert.alert(
-          '가입 처리 불가',
-          '서버의 이메일 인증 설정이 켜져 있어 가입을 완료할 수 없습니다.\n' +
-            '관리자에게 문의해 주세요.',
-          [{ text: '확인', onPress: () => router.replace('/(auth)/sign-in') }]
-        );
+        toast('서버의 이메일 인증 설정이 켜져 있어 가입을 완료할 수 없습니다.', 'error');
+        router.replace('/(auth)/sign-in');
       }
       // 정상 설정이면 바로 세션이 생기고 (auth)/_layout 이 홈으로 보낸다.
     } catch (e) {
-      Alert.alert('가입 실패', describeAuthError(e));
+      toast(describeAuthError(e), 'error');
     } finally {
       setSubmitting(false);
     }

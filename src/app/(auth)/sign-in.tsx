@@ -1,7 +1,6 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useToast } from '@/components/toast';
 import { AppButton, Field } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
@@ -19,13 +19,14 @@ import { describeAuthError } from '@/lib/errors';
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
+  const toast = useToast();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
     if (!loginId.trim() || !password) {
-      Alert.alert('입력 확인', '아이디와 비밀번호를 입력해 주세요.');
+      toast('아이디와 비밀번호를 입력해 주세요.', 'error');
       return;
     }
     setSubmitting(true);
@@ -33,7 +34,7 @@ export default function SignInScreen() {
       await signIn(loginId, password);
       // 로그인 성공 시 (auth)/_layout 의 Redirect 가 홈으로 보낸다.
     } catch (e) {
-      Alert.alert('로그인 실패', describeAuthError(e));
+      toast(describeAuthError(e), 'error');
     } finally {
       setSubmitting(false);
     }

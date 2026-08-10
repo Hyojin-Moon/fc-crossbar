@@ -223,6 +223,15 @@ Supabase Auth 가 email 형식을 요구하므로 `src/lib/login-id.ts` 가 아�
 잊은 사람은 Supabase Dashboard → Authentication → Users → 해당 계정 → 비밀번호 변경으로
 super_admin 이 처리한다. Phase 5 에서 관리자용 초기화 기능을 넣을지는 미정.
 
+## `Alert.alert` 을 쓰지 않는다
+
+`react-native-web` 의 `Alert` 는 **본문이 빈 스텁**이다 (`class Alert { static alert() {} }`).
+웹에서는 다이얼로그가 뜨지 않고 버튼의 `onPress` 도 호출되지 않아, 확인이 필요한 동작
+(로그아웃, 일정 삭제, 투표 마감)이 조용히 먹통이 된다. 안내 메시지도 안 보인다.
+
+- 확인이 필요하면 `confirmAsync()` (`src/lib/confirm.ts`) — 웹에서는 `window.confirm` 으로 우회
+- 단순 안내·성공·실패 메시지는 `useToast()` (`src/components/toast.tsx`)
+
 ## 인증 · 라우팅 흐름
 
 `src/lib/auth-context.tsx` 가 세션과 프로필을 들고 있는 유일한 소스다.

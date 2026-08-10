@@ -51,7 +51,6 @@ export default function SignInScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.tagline}>팀 출석 · 회비 관리</Text>
           </View>
 
           <View style={styles.form}>

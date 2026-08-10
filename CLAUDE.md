@@ -19,11 +19,11 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 | 2 | 회원가입 / 로그인 / 자동 로그인 | ✅ 완료 (Phase 1 에 포함) |
 | 3 | 일정 및 참석 투표 | ✅ 완료 |
 | 4 | 참석률 통계 | ✅ 완료 |
-| 5 | 관리자 회비 관리 | ⬜ 예정 |
+| 5 | 관리자 회비 관리 + 회원 관리 | ✅ 완료 |
 | 6 | Excel / CSV Import·Export | ⬜ 예정 |
 | 7 | APK 빌드 및 배포 | ⬜ 예정 (빌드 설정은 준비됨) |
 
-`src/app/(app)/finance.tsx` 는 아직 `PlaceholderScreen` 자리표시자다.
+남은 것은 Phase 6(CSV/XLSX)과 Phase 7(APK 배포)이다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
 
 ## 명령어
@@ -153,6 +153,7 @@ where  login_id = '본인아이디';
 ├── eas.json                  EAS Build 프로파일 (모두 APK 출력)
 ├── supabase/migrations/      0001_schema / 0002_rls / 0003_seed
 │                             0004_login_id / 0005_dev_members(개발용)
+│                             0006_require_approval
 └── src/
     ├── app/                  expo-router 파일 기반 라우팅
     │   ├── _layout.tsx       루트: AuthProvider · 스플래시 · Stack
@@ -165,11 +166,20 @@ where  login_id = '본인아이디';
     │       │   ├── [id].tsx   상세 · 참석 현황 명단 · 관리자 작업
     │       │   └── form.tsx   생성/수정 (?id= 있으면 수정) · 관리자 전용
     │       ├── stats.tsx     참석률 통계 (기간 필터 · 팀 요약 · 추세 · 회원별)
-    │       ├── finance.tsx   회비 · 관리자 전용 (Phase 5·6)
-    │       ├── admin.tsx     관리 · 관리자 전용 (Phase 5)
+    │       ├── finance/      회비 · 관리자 전용
+    │       │   ├── index.tsx      대시보드 (잔액 · 이번 달 요약 · 최근 지출)
+    │       │   ├── payments.tsx   월별 납부 상태 (1탭 저장)
+    │       │   ├── expenses.tsx   지출 목록 · 카테고리 필터
+    │       │   └── expense-form.tsx
+    │       ├── admin/        관리 · 관리자 전용
+    │       │   ├── index.tsx      메뉴
+    │       │   ├── members.tsx    회원 관리 (상태 · 권한 · 삭제)
+    │       │   ├── settings.tsx   팀 설정 (super_admin)
+    │       │   └── logs.tsx       활동 로그 (super_admin)
     │       └── profile.tsx   내 정보 / 로그아웃
     ├── lib/                  supabase · auth-context · errors · events · members
-    │                         dates · login-id · vote-options
+    │                         dates · login-id · vote-options · stats · finance
+    │                         settings · admin · confirm
     ├── components/           공용 UI (버튼 · 입력 · 카드 · 헤더)
     ├── constants/theme.ts    색상 · 여백 토큰
     └── types/database.ts     DB 스키마 TypeScript 타입
@@ -291,6 +301,31 @@ SQL 에서 `(date + time)::timestamptz` 도 같은 함정이다 (세션 TZ 가 U
 **주의**: 임베드 select(`events` + `votes:event_votes(...)`)로 센 인원수는 RLS 로 필터된
 결과다. `attendee_list_visible = false` 로 두면 회원에게는 본인 투표만 보여서 "참석 1명"이
 된다. 명단 비공개 기능을 실제로 쓸 거라면 인원수를 RPC 로 옮겨야 한다.
+
+## 회비 · 회원 관리 (Phase 5)
+
+**수입은 `status = 'paid'` 인 것만 센다.** `unpaid` 의 `amount` 는 받아야 할 금액이고
+`exempt` 는 면제라서 둘 다 입금이 아니다. 잔액 = 납부액 합 − 지출 합.
+
+**납부 저장은 upsert** (`member_id,year,month` UNIQUE). `membership_payments` 의 정책은
+`FOR ALL` 하나인데, `ON CONFLICT DO UPDATE` 는 INSERT 의 WITH CHECK 와 UPDATE 의
+USING/WITH CHECK 를 각각 평가한다. `FOR ALL` 이 셋 다 만족하는 것을 Postgres 에서 확인했다.
+
+**회원 관리 UI 는 RPC 가 거부할 조작을 아예 보여주지 않는다.** RPC 도 막지만
+빨간 토스트보다 버튼을 감추는 게 낫다.
+
+| 대상 | 상태 변경 | 권한 변경 | 삭제 |
+|---|---|---|---|
+| super_admin | 불가 (누구도) | 불가 | 불가 |
+| admin | super_admin 만 | super_admin 만 | super_admin 만 |
+| member | admin · super_admin | super_admin 만 | super_admin 만 |
+| 본인 | 상태만 (권한·삭제 불가) | 불가 | 불가 |
+
+**가입 승인제는 `app_settings.require_approval`** 로 켜고 끈다 (`0006`).
+`handle_new_user` 트리거가 이 값을 읽어 새 회원의 `status` 를 `pending` / `active` 로 정한다.
+`ALTER TABLE ... SET DEFAULT` 방식은 앱에서 토글할 수 없어 쓰지 않는다.
+트리거는 `SECURITY DEFINER` 라 이 조회가 RLS 를 우회한다 — 가입 시점엔 프로필이 없으므로
+의도된 동작이다. `is_admin()` 류 가드를 넣지 말 것.
 
 ## 차트 (Phase 4)
 

@@ -17,7 +17,7 @@ import { useToast } from '@/components/toast';
 import { AppButton, Card, Field, FullScreenLoader, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
-import { formatTime, todayLocalISO } from '@/lib/dates';
+import { formatTime, todayLocalISO, toTimeString } from '@/lib/dates';
 import { createEvent, fetchEvent, updateEvent, type EventInput } from '@/lib/events';
 import { describeDbError } from '@/lib/errors';
 import { MATCH_TYPES, MATCH_TYPE_LABEL, useVenues } from '@/lib/venues';
@@ -41,6 +41,36 @@ function shiftDays(dateStr: string, days: number): string {
   ).padStart(2, '0')}`;
 }
 
+/**
+ * 새 일정 기본값.
+ * 경기는 오전 8시~10시, 투표는 '지금'부터 3일 뒤 같은 시각까지로 채워 둔다.
+ * useState 초기화 함수로 넘겨서 렌더마다 다시 계산되지 않게 한다.
+ */
+function makeDefaults() {
+  const now = new Date();
+  const nowTime = toTimeString(now);
+  const today = todayLocalISO();
+
+  return {
+    title: '',
+    eventDate: today,
+    startTime: '08:00',
+    endTime: '10:00',
+    matchType: 'regular' as MatchType,
+    venueId: '',
+    venueName: '',
+    venueAddress: '',
+    mapUrl: '',
+    description: '',
+    voteOpenDate: today,
+    voteOpenTime: nowTime,
+    voteDeadlineDate: shiftDays(today, 3),
+    voteDeadlineTime: nowTime,
+    maxAttendees: '',
+    includeStats: true,
+  };
+}
+
 export default function EventFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEdit = Boolean(id);
@@ -50,25 +80,7 @@ export default function EventFormScreen() {
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    eventDate: todayLocalISO(),
-    startTime: '20:00',
-    endTime: '22:00',
-    matchType: 'regular' as MatchType,
-    venueId: '',
-    venueName: '',
-    venueAddress: '',
-    mapUrl: '',
-    description: '',
-    // 비우면 '지금부터' 로 저장한다
-    voteOpenDate: '',
-    voteOpenTime: '',
-    voteDeadlineDate: '',
-    voteDeadlineTime: '18:00',
-    maxAttendees: '',
-    includeStats: true,
-  });
+  const [form, setForm] = useState(makeDefaults);
 
   const set = (key: keyof typeof form) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -311,7 +323,7 @@ export default function EventFormScreen() {
                   mode="date"
                   value={form.voteOpenDate}
                   onChange={set('voteOpenDate')}
-                  hint="비우면 지금부터"
+                  hint="기본값: 지금"
                 />
               </View>
               <View style={styles.pairItem}>
@@ -330,7 +342,7 @@ export default function EventFormScreen() {
                   mode="date"
                   value={form.voteDeadlineDate}
                   onChange={set('voteDeadlineDate')}
-                  hint="비우면 경기 전날"
+                  hint="기본값: 3일 뒤"
                 />
               </View>
               <View style={styles.pairItem}>

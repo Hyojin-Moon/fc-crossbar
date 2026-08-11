@@ -19,6 +19,9 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // 탭을 떠나면 그 탭 안의 스택을 첫 화면으로 되돌린다.
+        // (일정 상세를 보다 다른 탭에 갔다 오면 목록부터 보여야 한다)
+        popToTopOnBlur: true,
         tabBarActiveTintColor: Colors.navy,
         tabBarInactiveTintColor: Colors.muted,
         // height/paddingBottom 을 고정하면 edge-to-edge 환경에서 제스처 바에 가린다.

@@ -61,7 +61,7 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScreenHeader
         title={settings.teamName}
-        subtitle={`${profile?.nickname || profile?.name}님, 반갑습니다`}
+        subtitle={`${profile?.name ?? ''}님, 반갑습니다`}
       />
       <ScrollView
         contentContainerStyle={styles.content}

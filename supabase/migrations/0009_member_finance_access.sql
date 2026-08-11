@@ -104,7 +104,6 @@ create or replace function public.get_attendance_stats(
 returns table (
   member_id          uuid,
   name               text,
-  nickname           text,
   present_count      integer,
   late_count         integer,
   absent_count       integer,
@@ -156,7 +155,6 @@ as $$
   select
     p.id,
     p.name,
-    p.nickname,
     coalesce(att.present, 0)::int,
     coalesce(att.late,    0)::int,
     coalesce(att.absent,  0)::int,
@@ -178,7 +176,7 @@ as $$
   where     p.status = 'active'
     -- 운영 계정은 팀 명부가 아니다
     and     p.role <> 'super_admin'
-  order by  9 desc, p.name;
+  order by  8 desc, p.name;
 $$;
 
 revoke execute on function public.get_attendance_stats(date, date) from public;

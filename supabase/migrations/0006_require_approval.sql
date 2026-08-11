@@ -29,13 +29,12 @@ begin
     from public.app_settings s
    where s.key = 'require_approval';
 
-  insert into public.profiles (user_id, login_id, name, nickname, phone, status)
+  insert into public.profiles (user_id, login_id, name, phone, status)
   values (
     new.id,
     case when new.email like '%@fccrossbar.local'
          then split_part(new.email, '@', 1) end,
     coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)),
-    nullif(new.raw_user_meta_data ->> 'nickname', ''),
     nullif(new.raw_user_meta_data ->> 'phone', ''),
     case when needs_approval then 'pending' else 'active' end
   )

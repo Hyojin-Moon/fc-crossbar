@@ -30,13 +30,12 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  insert into public.profiles (user_id, login_id, name, nickname, phone)
+  insert into public.profiles (user_id, login_id, name, phone)
   values (
     new.id,
     case when new.email like '%@fccrossbar.local'
          then split_part(new.email, '@', 1) end,
     coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)),
-    nullif(new.raw_user_meta_data ->> 'nickname', ''),
     nullif(new.raw_user_meta_data ->> 'phone', '')
   )
   on conflict (user_id) do nothing;
@@ -48,7 +47,7 @@ $$;
 --    (0001 에서 name/nickname/phone 만 GRANT 했으므로 이미 막혀 있지만,
 --     혹시 권한이 넓게 부여된 상태라면 여기서 다시 좁힌다)
 revoke update on public.profiles from authenticated;
-grant  update (name, nickname, phone) on public.profiles to authenticated;
+grant  update (name, phone) on public.profiles to authenticated;
 
 -- 확인
 -- select login_id, name, role, status from public.profiles order by created_at;

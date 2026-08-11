@@ -25,7 +25,6 @@ export default function SignUpScreen() {
     password: '',
     passwordConfirm: '',
     name: '',
-    nickname: '',
     phone: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -100,12 +99,12 @@ export default function SignUpScreen() {
               secureTextEntry
               autoCapitalize="none"
             />
-            <Field label="이름" value={form.name} onChangeText={set('name')} placeholder="홍길동" />
             <Field
-              label="닉네임 / 팀 내 호칭"
-              value={form.nickname}
-              onChangeText={set('nickname')}
-              placeholder="선택"
+              label="이름"
+              value={form.name}
+              onChangeText={set('name')}
+              placeholder="홍길동"
+              hint="실명으로 입력해 주세요. 팀 명부와 참석률에 이 이름이 표시됩니다."
             />
             <Field
               label="전화번호"

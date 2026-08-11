@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase';
 export type MemberBrief = {
   id: string;
   name: string;
-  nickname: string | null;
 };
 
 /**
@@ -18,7 +17,7 @@ export type MemberBrief = {
 export async function fetchActiveMembers(): Promise<MemberBrief[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, nickname')
+    .select('id, name')
     .eq('status', 'active')
     .neq('role', 'super_admin')
     .order('name');
@@ -26,9 +25,9 @@ export async function fetchActiveMembers(): Promise<MemberBrief[]> {
   return data ?? [];
 }
 
+/** 실명제라 이름만 쓴다. 표시 규칙을 한 곳에 모아 두기 위해 헬퍼는 유지한다. */
 export function displayName(member: MemberBrief | undefined): string {
-  if (!member) return '(알 수 없음)';
-  return member.nickname?.trim() ? `${member.name} (${member.nickname})` : member.name;
+  return member?.name ?? '(알 수 없음)';
 }
 
 export function useActiveMembers() {

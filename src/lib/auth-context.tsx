@@ -18,7 +18,6 @@ export type SignUpInput = {
   loginId: string;
   password: string;
   name: string;
-  nickname?: string;
   phone?: string;
 };
 
@@ -117,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: {
           name: input.name.trim(),
-          nickname: input.nickname?.trim() ?? '',
           phone: input.phone?.trim() ?? '',
         },
       },

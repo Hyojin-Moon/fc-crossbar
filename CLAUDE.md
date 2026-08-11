@@ -24,7 +24,8 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 | 7 | APK 빌드 및 배포 | ✅ 완료 (EAS Build + Update, GitHub Releases) |
 | 8 | 실제 출석 기록 (참석·지각·불참·노쇼) · 경기장 등록 · 경기 유형 | ✅ 완료 |
 | 9 | 회비 열람 범위 · super_admin 명부 제외 | ✅ 완료 |
-| 10 | 게시판 (공지) | ⬜ 예정 |
+| 10 | 실명제 전환 (닉네임 제거) | ✅ 완료 |
+| 11 | 게시판 (공지) | ⬜ 예정 |
 
 남은 것은 게시판, CSV Import, 푸시 알림이다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
@@ -158,6 +159,7 @@ where  login_id = '본인아이디';
 │                             0004_login_id / 0005_dev_members(개발용)
 │                             0006_require_approval / 0007_venues_and_match_type
 │                             0008_event_attendance / 0009_member_finance_access
+│                             0010_drop_nickname
 └── src/
     ├── app/                  expo-router 파일 기반 라우팅
     │   ├── _layout.tsx       루트: AuthProvider · 스플래시 · Stack
@@ -241,6 +243,17 @@ where  login_id = '본인아이디';
 **RLS 정책 안에서 `profiles` 를 직접 SELECT 하면 무한 재귀(42P17)가 난다.**
 반드시 `current_profile_id()` / `current_user_role()` / `is_admin()` / `is_super_admin()`
 (`SECURITY DEFINER`, `search_path` 고정) 헬퍼를 쓴다.
+
+## 실명제 — 닉네임 없음
+
+닉네임은 `0010` 에서 완전히 제거했다. 팀 명부·참석률·회비에 표시되는 이름은 `profiles.name` 하나다.
+회원이 직접 바꿀 수 있는 컬럼은 `name` / `phone` 뿐이다 (컬럼 단위 GRANT).
+
+표시 이름은 `displayName()` (`src/lib/members.ts`) 한 곳을 거친다 — 나중에 표시 규칙이 생기면
+여기만 고치면 된다.
+
+`get_attendance_stats()` 의 반환 컬럼에도 nickname 이 있었으므로, 컬럼을 지우기 전에
+함수를 먼저 DROP 하고 다시 만든다. `0010` 이 그 순서로 되어 있다.
 
 ## 로그인은 아이디 기반이다 (이메일 아님)
 

@@ -141,7 +141,6 @@ export default function MembersScreen() {
                     <View style={styles.rowText}>
                       <Text style={styles.name} numberOfLines={1}>
                         {member.name}
-                        {member.nickname ? ` (${member.nickname})` : ''}
                         {isSelf ? ' · 나' : ''}
                       </Text>
                       <Text style={styles.meta}>

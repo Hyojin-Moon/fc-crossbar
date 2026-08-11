@@ -221,7 +221,7 @@ export default function StatsScreen() {
                     <View style={styles.memberTop}>
                       <Text style={styles.rank}>{index + 1}</Text>
                       <Text style={[styles.memberName, isMe && styles.memberNameMe]} numberOfLines={1}>
-                        {displayName({ id: row.member_id, name: row.name, nickname: row.nickname })}
+                        {displayName({ id: row.member_id, name: row.name })}
                       </Text>
                       {isMe ? (
                         <View style={styles.meBadge}>

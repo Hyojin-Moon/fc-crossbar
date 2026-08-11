@@ -28,11 +28,10 @@ function periodSuffix(period: PeriodKey): string {
 async function exportMembers(): Promise<SaveResult> {
   const members = await fetchAllMembers();
   const csv = buildCsv(
-    ['아이디', '이름', '닉네임', '전화번호', '권한', '상태', '가입일'],
+    ['아이디', '이름', '전화번호', '권한', '상태', '가입일'],
     members.map((m) => [
       m.login_id ?? '',
       m.name,
-      m.nickname ?? '',
       m.phone ?? '',
       ROLE_LABEL[m.role],
       STATUS_LABEL[m.status],
@@ -98,7 +97,6 @@ async function exportAttendance(period: PeriodKey): Promise<SaveResult> {
   const csv = buildCsv(
     [
       '이름',
-      '닉네임',
       '참석',
       '지각',
       '불참',
@@ -111,7 +109,6 @@ async function exportAttendance(period: PeriodKey): Promise<SaveResult> {
     ],
     rows.map((r) => [
       r.name,
-      r.nickname ?? '',
       r.present_count,
       r.late_count,
       r.absent_count,

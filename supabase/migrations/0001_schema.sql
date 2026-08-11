@@ -43,7 +43,6 @@ create table if not exists public.profiles (
   user_id    uuid not null unique references auth.users(id) on delete cascade,
   login_id   text unique,
   name       text not null,
-  nickname   text,
   phone      text,
   role       text not null default 'member'
              check (role in ('super_admin', 'admin', 'member')),
@@ -281,14 +280,13 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  insert into public.profiles (user_id, login_id, name, nickname, phone)
+  insert into public.profiles (user_id, login_id, name, phone)
   values (
     new.id,
     -- 내부 도메인으로 만든 계정만 아이디를 뽑아 둔다. 실제 이메일 가입이면 null.
     case when new.email like '%@fccrossbar.local'
          then split_part(new.email, '@', 1) end,
     coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)),
-    nullif(new.raw_user_meta_data ->> 'nickname', ''),
     nullif(new.raw_user_meta_data ->> 'phone', '')
   )
   on conflict (user_id) do nothing;
@@ -474,7 +472,6 @@ create or replace function public.get_attendance_stats(
 returns table (
   member_id     uuid,
   name          text,
-  nickname      text,
   attend_count  integer,
   absent_count  integer,
   maybe_count   integer,
@@ -500,7 +497,6 @@ as $$
   select
     p.id,
     p.name,
-    p.nickname,
     count(*) filter (where vo.counts_as_attendance)::int,
     count(*) filter (where v.vote = 'absent')::int,
     count(*) filter (where v.vote = 'maybe')::int,
@@ -515,8 +511,8 @@ as $$
          on v.member_id = p.id and v.event_id in (select id from target_events)
   left join public.vote_options vo on vo.code = v.vote
   where p.status = 'active'
-  group by p.id, p.name, p.nickname
-  order by 9 desc, p.name;
+  group by p.id, p.name
+  order by 8 desc, p.name;
 $$;
 
 -- =====================================================================
@@ -526,7 +522,7 @@ $$;
 --     -> 클라이언트에서 role/status 를 직접 UPDATE 하는 것이 원천 차단된다.
 -- =====================================================================
 revoke update on public.profiles from authenticated;
-grant  update (name, nickname, phone) on public.profiles to authenticated;
+grant  update (name, phone) on public.profiles to authenticated;
 
 -- 함수는 기본적으로 PUBLIC 에 EXECUTE 가 부여된다. 필요한 롤에만 남기고 회수한다.
 revoke execute on function public.admin_set_member_role(uuid, text)   from public;

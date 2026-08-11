@@ -24,7 +24,6 @@ export type Profile = {
   /** 로그인 아이디. 내부적으로 `<login_id>@fccrossbar.local` 계정이 만들어진다. */
   login_id: string | null;
   name: string;
-  nickname: string | null;
   phone: string | null;
   role: Role;
   status: MemberStatus;
@@ -149,7 +148,6 @@ export type AdminAuditLog = {
 export type AttendanceStat = {
   member_id: string;
   name: string;
-  nickname: string | null;
   /** 실제 출석 */
   present_count: number;
   late_count: number;

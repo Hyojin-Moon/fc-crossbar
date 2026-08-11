@@ -21,7 +21,6 @@ export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useAuth();
   const toast = useToast();
   const [name, setName] = useState(profile?.name ?? '');
-  const [nickname, setNickname] = useState(profile?.nickname ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +37,7 @@ export default function ProfileScreen() {
     // role / status 는 authenticated 롤에 UPDATE 권한 자체가 없다. (0001_schema.sql 참고)
     const { error } = await supabase
       .from('profiles')
-      .update({ name: name.trim(), nickname: nickname.trim() || null, phone: phone.trim() || null })
+      .update({ name: name.trim(), phone: phone.trim() || null })
       .eq('id', profile.id);
     setSaving(false);
 
@@ -71,8 +70,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card>
           <SectionTitle>프로필</SectionTitle>
-          <Field label="이름" value={name} onChangeText={setName} />
-          <Field label="닉네임 / 팀 내 호칭" value={nickname} onChangeText={setNickname} />
+          <Field label="이름" value={name} onChangeText={setName} hint="실명으로 입력해 주세요." />
           <Field label="전화번호" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           <AppButton label="저장" onPress={onSave} loading={saving} />
         </Card>

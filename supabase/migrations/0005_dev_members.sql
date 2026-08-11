@@ -22,18 +22,17 @@
 do $$
 declare
   people   text[][] := array[
-    ['test1', '김철수', '캡틴'],
-    ['test2', '이민수', ''],
-    ['test3', '박영호', '박사'],
-    ['test4', '홍길동', ''],
-    ['test5', '최junior', '주니어'],
-    ['test6', '정대만', ''],
-    ['test7', '강백호', '백호']
+    ['test1', '김철수'],
+    ['test2', '이민수'],
+    ['test3', '박영호'],
+    ['test4', '홍길동'],
+    ['test5', '최준호'],
+    ['test6', '정대만'],
+    ['test7', '강백호']
   ];
   i            integer;
   login_id     text;
   member_name  text;
-  nickname     text;
   new_uid      uuid;
   created      integer := 0;
   -- 무작위 문자열의 bcrypt 해시. 형식은 유효하지만 아무 비밀번호와도 맞지 않는다.
@@ -44,7 +43,6 @@ begin
   for i in 1 .. array_length(people, 1) loop
     login_id    := people[i][1];
     member_name := people[i][2];
-    nickname    := people[i][3];
 
     if exists (select 1 from auth.users u where u.email = login_id || '@fccrossbar.local') then
       continue;
@@ -64,7 +62,7 @@ begin
       unusable_pw,
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      jsonb_build_object('name', member_name, 'nickname', nickname)
+      jsonb_build_object('name', member_name)
     );
     created := created + 1;
   end loop;

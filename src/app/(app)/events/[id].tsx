@@ -20,7 +20,9 @@ import {
 } from '@/lib/events';
 import { describeDbError } from '@/lib/errors';
 import { displayName, useActiveMembers } from '@/lib/members';
+import { MATCH_TYPE_LABEL } from '@/lib/venues';
 import { useVoteOptions } from '@/lib/vote-options';
+import { ATTENDANCE_LABEL, COUNTS_AS_ATTENDED } from '@/lib/attendance';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -69,6 +71,9 @@ export default function EventDetailScreen() {
 
   const window = getVoteWindow(event);
   const voteByMember = new Map(event.votes.map((v) => [v.member_id, v.vote]));
+  const recordedAttendance = event.attendance ?? [];
+  const attendanceCounts = { present: 0, late: 0, absent: 0, no_show: 0 };
+  for (const record of recordedAttendance) attendanceCounts[record.status] += 1;
 
   // 코드별 명단 + 미투표 명단
   const groups = [
@@ -134,7 +139,7 @@ export default function EventDetailScreen() {
     <View style={styles.screen}>
       <ScreenHeader
         title={event.title}
-        subtitle={formatEventDateLong(event.event_date)}
+        subtitle={`${MATCH_TYPE_LABEL[event.match_type]} · ${formatEventDateLong(event.event_date)}`}
         right={
           <Pressable
             accessibilityRole="button"
@@ -209,6 +214,21 @@ export default function EventDetailScreen() {
           ))}
         </Card>
 
+        {recordedAttendance.length > 0 ? (
+          <Card>
+            <SectionTitle>출석 결과</SectionTitle>
+            <Muted>운영진이 경기 후 기록한 실제 출석입니다. 참석률에 쓰입니다.</Muted>
+            <Text style={styles.attendanceLine}>
+              {(['present', 'late', 'absent', 'no_show'] as const)
+                .map((st) => `${ATTENDANCE_LABEL[st]} ${attendanceCounts[st]}`)
+                .join(' · ')}
+            </Text>
+            <Text style={styles.attendanceTotal}>
+              출석 인원 {recordedAttendance.filter((a) => COUNTS_AS_ATTENDED.includes(a.status)).length}명
+            </Text>
+          </Card>
+        ) : null}
+
         {isAdmin ? (
           <Card>
             <SectionTitle>관리</SectionTitle>
@@ -216,6 +236,11 @@ export default function EventDetailScreen() {
               투표 상태: {event.status === 'open' ? '열림' : event.status === 'closed' ? '마감' : '취소'}
               {event.vote_deadline ? ` · 마감 예정 ${formatDeadline(event.vote_deadline)}` : ''}
             </Muted>
+            <AppButton
+              label="출석 체크"
+              disabled={busy}
+              onPress={() => router.push(`/(app)/events/attendance?id=${event.id}`)}
+            />
             <AppButton
               label="일정 수정"
               variant="outline"
@@ -282,5 +307,7 @@ const styles = StyleSheet.create({
   groupCount: { fontSize: 15, fontWeight: '800', color: Colors.navy },
   nameList: { paddingBottom: Spacing.two, paddingLeft: Spacing.four, gap: 2 },
   name: { fontSize: 14, color: Colors.textSecondary },
+  attendanceLine: { fontSize: 14, color: Colors.text },
+  attendanceTotal: { fontSize: 15, fontWeight: '800', color: Colors.navy },
   infoRowLast: {},
 });

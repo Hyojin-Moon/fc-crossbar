@@ -82,7 +82,10 @@ export default function StatsScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="참석률 통계" subtitle={PERIOD_LABELS[period]} />
+      <ScreenHeader
+        title="참석률 통계"
+        subtitle={`${PERIOD_LABELS[period]} · 실제 출석 기준`}
+      />
 
       {/* 필터는 한 줄로 모아 두고, 아래 모든 카드가 같은 구간을 본다. */}
       <View style={styles.filterBar}>
@@ -132,7 +135,7 @@ export default function StatsScreen() {
             <SectionTitle>불러오지 못했습니다</SectionTitle>
             <Muted>{error}</Muted>
           </Card>
-        ) : summary.totalEvents === 0 ? (
+        ) : summary.targetEvents === 0 ? (
           <Card>
             <SectionTitle>기간 내 집계할 경기가 없습니다</SectionTitle>
             <Muted>
@@ -141,18 +144,34 @@ export default function StatsScreen() {
           </Card>
         ) : (
           <>
+            {summary.recordedEvents === 0 ? (
+              <Card>
+                <SectionTitle>아직 출석 기록이 없습니다</SectionTitle>
+                <Muted>
+                  참석률은 운영진이 경기 후 기록한 실제 출석(참석 · 지각)으로 계산합니다.
+                  일정 상세 화면의 &lsquo;출석 체크&rsquo;에서 기록하면 여기에 반영됩니다.
+                </Muted>
+                <Muted>아래 투표 응답률은 지금도 볼 수 있습니다.</Muted>
+              </Card>
+            ) : null}
+
             {mine ? (
               <Card>
                 <SectionTitle>내 참석률</SectionTitle>
                 <View style={styles.heroRow}>
                   <Text style={styles.hero}>{Number(mine.attendance_rate)}%</Text>
                   <Text style={styles.heroSub}>
-                    {summary.totalEvents}경기 중 {mine.attend_count}회 참석
+                    {summary.recordedEvents}경기 중 {mine.present_count + mine.late_count}회 출석
                   </Text>
                 </View>
                 <RateBar value={Number(mine.attendance_rate)} />
                 <Text style={styles.breakdown}>
-                  불참 {mine.absent_count} · 미정 {mine.maybe_count} · 미투표 {mine.no_vote_count}
+                  참석 {mine.present_count} · 지각 {mine.late_count} · 불참 {mine.absent_count} ·
+                  노쇼 {mine.no_show_count}
+                </Text>
+                <Text style={styles.subMetric}>
+                  투표 응답률 {Number(mine.vote_response_rate)}% ({mine.voted_count}/
+                  {mine.vote_target_events})
                 </Text>
               </Card>
             ) : null}
@@ -161,8 +180,8 @@ export default function StatsScreen() {
               <SectionTitle>팀 전체</SectionTitle>
               <View style={styles.tiles}>
                 <Tile label="평균 참석률" value={`${summary.avgRate}%`} />
-                <Tile label="총 경기" value={`${summary.totalEvents}회`} />
-                <Tile label="평균 참석" value={`${summary.avgAttendees}명`} />
+                <Tile label="출석 체크 경기" value={`${summary.recordedEvents}회`} />
+                <Tile label="경기당 평균 출석" value={`${summary.avgAttendees}명`} />
                 <Tile label="회원" value={`${summary.memberCount}명`} />
               </View>
               {summary.top ? (
@@ -213,8 +232,11 @@ export default function StatsScreen() {
                     </View>
                     <RateBar value={Number(row.attendance_rate)} />
                     <Text style={styles.breakdown}>
-                      참석 {row.attend_count} · 불참 {row.absent_count} · 미정 {row.maybe_count} ·
-                      미투표 {row.no_vote_count}
+                      참석 {row.present_count} · 지각 {row.late_count} · 불참 {row.absent_count} ·
+                      노쇼 {row.no_show_count}
+                      {row.recorded_events - row.present_count - row.late_count - row.absent_count - row.no_show_count > 0
+                        ? ` · 미기록 ${row.recorded_events - row.present_count - row.late_count - row.absent_count - row.no_show_count}`
+                        : ''}
                     </Text>
                   </View>
                 );
@@ -324,4 +346,5 @@ const styles = StyleSheet.create({
   },
   barFill: { height: 8, borderRadius: 4, backgroundColor: Colors.accent },
   breakdown: { fontSize: 12, color: Colors.textSecondary },
+  subMetric: { fontSize: 12, color: Colors.muted },
 });

@@ -25,6 +25,7 @@ import {
   type EventWithVotes,
 } from '@/lib/events';
 import { useActiveMembers } from '@/lib/members';
+import { MATCH_TYPE_LABEL } from '@/lib/venues';
 import { useVoteOptions } from '@/lib/vote-options';
 
 type Tab = 'upcoming' | 'past';
@@ -139,7 +140,7 @@ export default function EventListScreen() {
                 </View>
 
                 <Text style={styles.itemMeta}>
-                  {formatEventDate(event.event_date)}
+                  {MATCH_TYPE_LABEL[event.match_type]} · {formatEventDate(event.event_date)}
                   {formatTimeRange(event.start_time, event.end_time)
                     ? ` · ${formatTimeRange(event.start_time, event.end_time)}`
                     : ''}

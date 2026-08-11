@@ -28,6 +28,12 @@ export default function AdminMenuScreen() {
             onPress={() => router.push('/(app)/admin/members')}
           />
           <MenuRow
+            icon="location"
+            title="경기장 관리"
+            subtitle="미리 등록해 두면 일정 만들 때 골라 쓴다"
+            onPress={() => router.push('/(app)/admin/venues')}
+          />
+          <MenuRow
             icon="download-outline"
             title="데이터 내보내기"
             subtitle="회원 · 회비 · 지출 · 참석률 CSV"

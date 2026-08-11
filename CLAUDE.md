@@ -21,9 +21,11 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 | 4 | 참석률 통계 | ✅ 완료 |
 | 5 | 관리자 회비 관리 + 회원 관리 | ✅ 완료 |
 | 6 | CSV Export | ✅ 완료 (Import 는 컬럼 형식 미정으로 보류) |
-| 7 | APK 빌드 및 배포 | ⬜ 예정 (빌드 설정은 준비됨) |
+| 7 | APK 빌드 및 배포 | ✅ 완료 (EAS Build + Update, GitHub Releases) |
+| 8 | 실제 출석 기록 (참석·지각·불참·노쇼) · 경기장 등록 · 경기 유형 | ✅ 완료 |
+| 9 | 게시판 (공지) | ⬜ 예정 |
 
-남은 것은 Phase 7(APK 배포)과 CSV Import 다.
+남은 것은 게시판, CSV Import, 푸시 알림이다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
 
 ## 명령어
@@ -153,7 +155,8 @@ where  login_id = '본인아이디';
 ├── eas.json                  EAS Build 프로파일 (모두 APK 출력)
 ├── supabase/migrations/      0001_schema / 0002_rls / 0003_seed
 │                             0004_login_id / 0005_dev_members(개발용)
-│                             0006_require_approval
+│                             0006_require_approval / 0007_venues_and_match_type
+│                             0008_event_attendance
 └── src/
     ├── app/                  expo-router 파일 기반 라우팅
     │   ├── _layout.tsx       루트: AuthProvider · 스플래시 · Stack
@@ -163,8 +166,9 @@ where  login_id = '본인아이디';
     │       ├── index.tsx     홈 (진행 중인 투표 카드 + 예정·최근 일정)
     │       ├── events/       일정 탭 (안에 Stack)
     │       │   ├── index.tsx  목록 (예정 / 지난 경기)
-    │       │   ├── [id].tsx   상세 · 참석 현황 명단 · 관리자 작업
-    │       │   └── form.tsx   생성/수정 (?id= 있으면 수정) · 관리자 전용
+    │       │   ├── [id].tsx   상세 · 참석 현황 명단 · 출석 결과 · 관리자 작업
+    │       │   ├── form.tsx   생성/수정 (?id= 있으면 수정) · 관리자 전용
+    │       │   └── attendance.tsx  출석 체크 (?id=) · 관리자 전용
     │       ├── stats.tsx     참석률 통계 (기간 필터 · 팀 요약 · 추세 · 회원별)
     │       ├── finance/      회비 · 관리자 전용
     │       │   ├── index.tsx      대시보드 (잔액 · 이번 달 요약 · 최근 지출)
@@ -174,6 +178,7 @@ where  login_id = '본인아이디';
     │       ├── admin/        관리 · 관리자 전용
     │       │   ├── index.tsx      메뉴
     │       │   ├── members.tsx    회원 관리 (상태 · 권한 · 삭제)
+    │       │   ├── venues.tsx     경기장 등록/수정
     │       │   ├── export.tsx     CSV 내보내기
     │       │   ├── settings.tsx   팀 설정 (super_admin)
     │       │   └── logs.tsx       활동 로그 (super_admin)
@@ -181,6 +186,7 @@ where  login_id = '본인아이디';
     ├── lib/                  supabase · auth-context · errors · events · members
     │                         dates · login-id · vote-options · stats · finance
     │                         settings · admin · confirm · csv · export-data
+│                         attendance · venues
     ├── components/           공용 UI (버튼 · 입력 · 카드 · 헤더)
     ├── constants/theme.ts    색상 · 여백 토큰
     └── types/database.ts     DB 스키마 TypeScript 타입
@@ -344,6 +350,49 @@ USING/WITH CHECK 를 각각 평가한다. `FOR ALL` 이 셋 다 만족하는 것
 `expo-file-system/legacy` 에 있다. 새 `File` / `Paths` 클래스를 쓴다.
 
 내보내기에 `member_id` 같은 UUID 만 넣지 말 것 — 사람이 읽는 파일이므로 이름·아이디를 함께 넣는다.
+
+## 투표 vs 실제 출석 — 절대 섞지 말 것 (Phase 8)
+
+두 개는 **다른 사실**이다.
+
+| | 투표 `event_votes` | 출석 `event_attendance` |
+|---|---|---|
+| 누가 기록 | 회원 본인 | 운영진 |
+| 시점 | 경기 전 (사전 의사) | 경기 후 (실제) |
+| 값 | 참석 / 불참 / 미정 (+확장) | 참석 / 지각 / 불참 / 노쇼 |
+| 쓰임 | 홈 카드의 예상 인원 | **참석률** |
+
+`event_votes` 에 지각·노쇼를 끼워 넣지 않는다. 노쇼는 "참석한다고 투표했는데 안 온" 것이라
+투표 값을 덮어쓰면 그 신호가 사라지고, 투표 안 했는데 나온 사람도 기록할 수 없다.
+
+**참석률 = (참석 + 지각) / 출석 체크가 끝난 경기 수.**
+출석 기록이 하나도 없는 경기는 분모에서 빠진다 — 아직 체크하지 않은 경기 때문에 전원
+참석률이 깎이면 숫자를 신뢰할 수 없다. 화면은 `hasAttendanceData()` 로 분기해
+기록이 없으면 참석률 대신 안내를 띄운다.
+
+`get_attendance_stats()` 는 참석률과 **투표 응답률**을 함께 돌려준다. 라벨을 분명히 달아
+"참석률" 이라는 이름의 숫자가 두 개 생기지 않게 한다.
+
+**주의**: 출석 집계와 투표 집계를 `profiles` 에 각각 LEFT JOIN 하면 카테시안 곱이 되어
+개수가 부풀려진다. RPC 안에서 회원별로 먼저 집계한 뒤 붙인다.
+
+`admin_seed_attendance_from_votes()` 는 `ON CONFLICT DO NOTHING` 이다.
+"투표자 참석 처리" 버튼을 다시 눌러도 손으로 고친 지각·노쇼가 되돌아가지 않는다.
+
+## 경기장 · 경기 유형 (Phase 8)
+
+`venues` 에 미리 등록하고 일정 생성 시 고른다. 고르면 `events.venue_name` /
+`venue_address` 에 값을 **복사**해 넣는다 (`venue_id` 는 참조용).
+경기장 정보가 나중에 바뀌어도 지난 경기 기록은 당시 값을 유지해야 하기 때문이다.
+
+`events.match_type` = `season`(시즌경기) / `regular`(일반경기) / `etc`.
+
+## 타입드 라우트
+
+`experiments.typedRoutes` 가 켜져 있어 `.expo/types/router.d.ts` 가 라우트를 검사한다.
+**이 파일은 개발 서버만 생성한다** — `expo export` 로는 갱신되지 않는다.
+새 화면을 추가한 뒤 `router.push` 가 타입 에러를 내면 개발 서버를 한 번 띄워 재생성한다.
+(다른 포트로 잠깐 띄우면 된다: `npx expo start --port 8099`)
 
 ## 차트 (Phase 4)
 

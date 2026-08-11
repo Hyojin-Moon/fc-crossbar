@@ -1,6 +1,6 @@
 import { todayLocalISO } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
-import type { TeamEvent, VoteCode, VoteOption } from '@/types/database';
+import type { AttendanceStatus, MatchType, TeamEvent, VoteCode, VoteOption } from '@/types/database';
 
 export type VoteRow = {
   id: string;
@@ -9,7 +9,17 @@ export type VoteRow = {
   guest_count: number;
 };
 
-export type EventWithVotes = TeamEvent & { votes: VoteRow[] };
+export type AttendanceRow = {
+  id: string;
+  member_id: string;
+  status: AttendanceStatus;
+};
+
+export type EventWithVotes = TeamEvent & {
+  votes: VoteRow[];
+  /** 실제 출석 기록. 임베드하지 않은 조회에서는 undefined. */
+  attendance?: AttendanceRow[];
+};
 
 /**
  * 투표 창 상태. is_vote_open() SQL 함수와 같은 조건을 쓴다.
@@ -68,7 +78,8 @@ export function summarizeVotes(
   };
 }
 
-const EVENT_SELECT = '*, votes:event_votes(id, member_id, vote, guest_count)';
+const EVENT_SELECT =
+  '*, votes:event_votes(id, member_id, vote, guest_count), attendance:event_attendance(id, member_id, status)';
 
 /** 오늘 이후(오늘 포함) 일정. 가까운 순. */
 export async function fetchUpcomingEvents(): Promise<EventWithVotes[]> {
@@ -160,9 +171,11 @@ export type EventInput = {
   event_date: string;
   start_time: string | null;
   end_time: string | null;
+  venue_id: string | null;
   venue_name: string | null;
   venue_address: string | null;
   map_url: string | null;
+  match_type: MatchType;
   description: string | null;
   vote_open_at: string;
   vote_deadline: string | null;

@@ -10,6 +10,10 @@
 export type Role = 'super_admin' | 'admin' | 'member';
 export type MemberStatus = 'pending' | 'active' | 'inactive';
 export type EventStatus = 'open' | 'closed' | 'cancelled';
+/** 시즌경기 / 일반경기 / 기타 */
+export type MatchType = 'season' | 'regular' | 'etc';
+/** 실제 출석 상태. 투표(사전 의사)와 별개로 운영진이 기록한다. */
+export type AttendanceStatus = 'present' | 'late' | 'absent' | 'no_show';
 export type PaymentStatus = 'paid' | 'unpaid' | 'exempt';
 /** vote_options.code. 기본 3개 + 확장용 3개 */
 export type VoteCode = 'attend' | 'absent' | 'maybe' | 'late' | 'early_leave' | 'guest';
@@ -34,9 +38,11 @@ export type TeamEvent = {
   event_date: string;
   start_time: string | null;
   end_time: string | null;
+  venue_id: string | null;
   venue_name: string | null;
   venue_address: string | null;
   map_url: string | null;
+  match_type: MatchType;
   description: string | null;
   vote_open_at: string;
   vote_deadline: string | null;
@@ -57,6 +63,29 @@ export type EventVote = {
   vote: VoteCode;
   guest_count: number;
   memo: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Venue = {
+  id: string;
+  name: string;
+  address: string | null;
+  map_url: string | null;
+  memo: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventAttendance = {
+  id: string;
+  event_id: string;
+  member_id: string;
+  status: AttendanceStatus;
+  memo: string | null;
+  recorded_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -112,16 +141,29 @@ export type AdminAuditLog = {
   created_at: string;
 };
 
+/**
+ * get_attendance_stats() 결과.
+ * 참석률은 실제 출석 기준이고(지각도 참석으로 센다), 투표 응답률은 별개 지표다.
+ * 두 숫자를 섞어 쓰지 않도록 컬럼을 분리해 두었다.
+ */
 export type AttendanceStat = {
   member_id: string;
   name: string;
   nickname: string | null;
-  attend_count: number;
+  /** 실제 출석 */
+  present_count: number;
+  late_count: number;
   absent_count: number;
-  maybe_count: number;
-  no_vote_count: number;
-  total_events: number;
+  no_show_count: number;
+  /** 출석 체크가 끝난 경기 수 = 참석률의 분모 */
+  recorded_events: number;
+  /** (참석 + 지각) / recorded_events */
   attendance_rate: number;
+  /** 투표 */
+  attend_vote_count: number;
+  voted_count: number;
+  vote_target_events: number;
+  vote_response_rate: number;
 };
 
 /** createClient<Database> 에 넘기는 제네릭 타입 */
@@ -142,6 +184,11 @@ export type Database = {
         Pick<EventVote, 'event_id' | 'member_id' | 'vote'> & Partial<EventVote>
       >;
       vote_options: Table<VoteOption>;
+      venues: Table<Venue, Pick<Venue, 'name'> & Partial<Venue>>;
+      event_attendance: Table<
+        EventAttendance,
+        Pick<EventAttendance, 'event_id' | 'member_id' | 'status'> & Partial<EventAttendance>
+      >;
       membership_payments: Table<
         MembershipPayment,
         Pick<MembershipPayment, 'member_id' | 'year' | 'month'> & Partial<MembershipPayment>
@@ -158,6 +205,10 @@ export type Database = {
       get_attendance_stats: {
         Args: { from_date?: string | null; to_date?: string | null };
         Returns: AttendanceStat[];
+      };
+      admin_seed_attendance_from_votes: {
+        Args: { p_event_id: string };
+        Returns: number;
       };
       admin_set_member_role: {
         Args: { target_profile_id: string; new_role: 'admin' | 'member' };

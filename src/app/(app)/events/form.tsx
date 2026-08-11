@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -19,6 +20,8 @@ import { useAuth } from '@/lib/auth-context';
 import { formatTime, todayLocalISO } from '@/lib/dates';
 import { createEvent, fetchEvent, updateEvent, type EventInput } from '@/lib/events';
 import { describeDbError } from '@/lib/errors';
+import { MATCH_TYPES, MATCH_TYPE_LABEL, useVenues } from '@/lib/venues';
+import type { MatchType } from '@/types/database';
 
 /** 'YYYY-MM-DD' + 'HH:MM' -> 로컬 시각 Date. 형식이 틀리면 null. */
 function combineLocal(dateStr: string, timeStr: string): Date | null {
@@ -43,6 +46,7 @@ export default function EventFormScreen() {
   const isEdit = Boolean(id);
   const { profile } = useAuth();
   const toast = useToast();
+  const { venues } = useVenues();
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -51,6 +55,8 @@ export default function EventFormScreen() {
     eventDate: todayLocalISO(),
     startTime: '20:00',
     endTime: '22:00',
+    matchType: 'regular' as MatchType,
+    venueId: '',
     venueName: '',
     venueAddress: '',
     mapUrl: '',
@@ -91,6 +97,8 @@ export default function EventFormScreen() {
           eventDate: event.event_date,
           startTime: formatTime(event.start_time),
           endTime: formatTime(event.end_time),
+          matchType: event.match_type,
+          venueId: event.venue_id ?? '',
           venueName: event.venue_name ?? '',
           venueAddress: event.venue_address ?? '',
           mapUrl: event.map_url ?? '',
@@ -145,6 +153,10 @@ export default function EventFormScreen() {
       event_date: form.eventDate,
       start_time: form.startTime || null,
       end_time: form.endTime || null,
+      match_type: form.matchType,
+      venue_id: form.venueId || null,
+      // 경기장 정보는 '복사'해 저장한다. 나중에 경기장 등록 정보가 바뀌어도
+      // 지난 경기 기록은 당시 값을 유지해야 한다.
       venue_name: form.venueName.trim() || null,
       venue_address: form.venueAddress.trim() || null,
       map_url: form.mapUrl.trim() || null,
@@ -198,6 +210,22 @@ export default function EventFormScreen() {
               onChangeText={set('title')}
               placeholder="예) 이번 주 정기전"
             />
+            <View style={styles.field}>
+              <Text style={styles.label}>경기 유형</Text>
+              <View style={styles.chips}>
+                {MATCH_TYPES.map((type) => (
+                  <Pressable
+                    key={type}
+                    onPress={() => setForm((prev) => ({ ...prev, matchType: type }))}
+                    style={[styles.chip, form.matchType === type && styles.chipActive]}>
+                    <Text
+                      style={[styles.chipText, form.matchType === type && styles.chipTextActive]}>
+                      {MATCH_TYPE_LABEL[type]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
             <DateTimeInput
               label="날짜"
               mode="date"
@@ -226,10 +254,42 @@ export default function EventFormScreen() {
 
           <Card>
             <SectionTitle>장소</SectionTitle>
+            {venues.length > 0 ? (
+              <View style={styles.field}>
+                <Text style={styles.label}>등록된 경기장</Text>
+                <View style={styles.chips}>
+                  {venues.map((venue) => (
+                    <Pressable
+                      key={venue.id}
+                      onPress={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          venueId: venue.id,
+                          venueName: venue.name,
+                          venueAddress: venue.address ?? '',
+                          mapUrl: venue.map_url ?? prev.mapUrl,
+                        }))
+                      }
+                      style={[styles.chip, form.venueId === venue.id && styles.chipActive]}>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          form.venueId === venue.id && styles.chipTextActive,
+                        ]}>
+                        {venue.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Muted>고르면 주소와 지도 링크가 자동으로 채워집니다.</Muted>
+              </View>
+            ) : (
+              <Muted>등록된 경기장이 없습니다. 관리 &gt; 경기장 관리에서 추가할 수 있습니다.</Muted>
+            )}
             <Field
               label="구장명"
               value={form.venueName}
-              onChangeText={set('venueName')}
+              onChangeText={(value) => setForm((prev) => ({ ...prev, venueName: value, venueId: '' }))}
               placeholder="예) 크로스바 풋살파크"
             />
             <Field label="주소" value={form.venueAddress} onChangeText={set('venueAddress')} />
@@ -330,6 +390,20 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.surface },
   flex: { flex: 1 },
   content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
+  field: { gap: Spacing.one },
+  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
+  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  chipTextActive: { color: Colors.textOnNavy },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
   multiline: { minHeight: 84, paddingTop: Spacing.two, textAlignVertical: 'top' },

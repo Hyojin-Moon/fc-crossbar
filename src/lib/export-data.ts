@@ -12,7 +12,10 @@ export const EXPORT_LABEL: Record<ExportKind, { title: string; description: stri
   members: { title: '회원 목록', description: '아이디 · 이름 · 닉네임 · 권한 · 상태 · 가입일' },
   payments: { title: '회비 납부 내역', description: '회원 · 연월 · 금액 · 상태 · 납부일 · 메모' },
   expenses: { title: '회비 사용 내역', description: '날짜 · 카테고리 · 내용 · 금액 · 메모' },
-  attendance: { title: '참석률 통계', description: '회원별 참석 · 불참 · 미정 · 미투표 · 참석률' },
+  attendance: {
+    title: '참석률 통계',
+    description: '참석 · 지각 · 불참 · 노쇼 · 참석률 · 투표 응답률',
+  },
 };
 
 /** 회비/통계는 기간에 따라 결과가 달라지므로 어떤 구간을 뽑았는지 파일명에 남긴다. */
@@ -93,16 +96,31 @@ async function exportAttendance(period: PeriodKey): Promise<SaveResult> {
   const { rows } = await fetchStats(rangeFor(period), options);
 
   const csv = buildCsv(
-    ['이름', '닉네임', '참석', '불참', '미정', '미투표', '대상 경기', '참석률(%)'],
+    [
+      '이름',
+      '닉네임',
+      '참석',
+      '지각',
+      '불참',
+      '노쇼',
+      '출석체크 경기',
+      '참석률(%)',
+      '투표 응답',
+      '집계 경기',
+      '투표 응답률(%)',
+    ],
     rows.map((r) => [
       r.name,
       r.nickname ?? '',
-      r.attend_count,
+      r.present_count,
+      r.late_count,
       r.absent_count,
-      r.maybe_count,
-      r.no_vote_count,
-      r.total_events,
+      r.no_show_count,
+      r.recorded_events,
       Number(r.attendance_rate),
+      r.voted_count,
+      r.vote_target_events,
+      Number(r.vote_response_rate),
     ])
   );
   return saveCsv(csvFilename('참석률', periodSuffix(period)), csv);

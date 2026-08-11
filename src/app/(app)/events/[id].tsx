@@ -27,7 +27,7 @@ import { ATTENDANCE_LABEL, COUNTS_AS_ATTENDED } from '@/lib/attendance';
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile, isAdmin } = useAuth();
-  const { members } = useActiveMembers();
+  const { members, memberIds } = useActiveMembers();
   const options = useVoteOptions();
   const toast = useToast();
 
@@ -71,7 +71,8 @@ export default function EventDetailScreen() {
 
   const window = getVoteWindow(event);
   const voteByMember = new Map(event.votes.map((v) => [v.member_id, v.vote]));
-  const recordedAttendance = event.attendance ?? [];
+  // 팀원이 아닌 사람(super_admin 등)의 기록은 제외한다
+  const recordedAttendance = (event.attendance ?? []).filter((a) => memberIds.has(a.member_id));
   const attendanceCounts = { present: 0, late: 0, absent: 0, no_show: 0 };
   for (const record of recordedAttendance) attendanceCounts[record.status] += 1;
 
@@ -156,7 +157,7 @@ export default function EventDetailScreen() {
           <VoteCard
             event={event}
             memberId={profile.id}
-            memberCount={members.length}
+            memberIds={memberIds}
             onChanged={load}
           />
         ) : null}

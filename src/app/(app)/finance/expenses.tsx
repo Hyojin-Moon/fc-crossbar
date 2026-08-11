@@ -7,12 +7,14 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
 import { Card, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/lib/auth-context';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
 import { EXPENSE_CATEGORIES, fetchExpenses, formatWon } from '@/lib/finance';
 import type { Expense } from '@/types/database';
 
 export default function ExpensesScreen() {
+  const { isAdmin } = useAuth();
   const toast = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [category, setCategory] = useState<string | null>(null);
@@ -50,13 +52,15 @@ export default function ExpensesScreen() {
         subtitle={`${filtered.length}건 · ${formatWon(total)}`}
         right={
           <View style={styles.headerActions}>
-            <Pressable
-              accessibilityLabel="새 지출"
-              onPress={() => router.push('/(app)/finance/expense-form')}
-              style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="add" size={20} color={Colors.navy} />
-              <Text style={styles.addLabel}>등록</Text>
-            </Pressable>
+            {isAdmin ? (
+              <Pressable
+                accessibilityLabel="새 지출"
+                onPress={() => router.push('/(app)/finance/expense-form')}
+                style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.7 }]}>
+                <Ionicons name="add" size={20} color={Colors.navy} />
+                <Text style={styles.addLabel}>등록</Text>
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityLabel="뒤로"
               onPress={() => router.back()}
@@ -110,8 +114,9 @@ export default function ExpensesScreen() {
                 filtered.map((expense) => (
                   <Pressable
                     key={expense.id}
+                    disabled={!isAdmin}
                     onPress={() => router.push(`/(app)/finance/expense-form?id=${expense.id}`)}
-                    style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
+                    style={({ pressed }) => [styles.row, pressed && isAdmin && { opacity: 0.7 }]}>
                     <View style={styles.rowMain}>
                       <Text style={styles.desc} numberOfLines={1}>
                         {expense.description}

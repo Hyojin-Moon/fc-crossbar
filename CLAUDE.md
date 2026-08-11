@@ -23,7 +23,8 @@ iOS 는 현재 대상이 아니다. 유료 서비스나 서버는 추가하지 �
 | 6 | CSV Export | ✅ 완료 (Import 는 컬럼 형식 미정으로 보류) |
 | 7 | APK 빌드 및 배포 | ✅ 완료 (EAS Build + Update, GitHub Releases) |
 | 8 | 실제 출석 기록 (참석·지각·불참·노쇼) · 경기장 등록 · 경기 유형 | ✅ 완료 |
-| 9 | 게시판 (공지) | ⬜ 예정 |
+| 9 | 회비 열람 범위 · super_admin 명부 제외 | ✅ 완료 |
+| 10 | 게시판 (공지) | ⬜ 예정 |
 
 남은 것은 게시판, CSV Import, 푸시 알림이다.
 각 Phase 를 끝낼 때마다 앱이 실행 가능한 상태를 유지한다.
@@ -156,7 +157,7 @@ where  login_id = '본인아이디';
 ├── supabase/migrations/      0001_schema / 0002_rls / 0003_seed
 │                             0004_login_id / 0005_dev_members(개발용)
 │                             0006_require_approval / 0007_venues_and_match_type
-│                             0008_event_attendance
+│                             0008_event_attendance / 0009_member_finance_access
 └── src/
     ├── app/                  expo-router 파일 기반 라우팅
     │   ├── _layout.tsx       루트: AuthProvider · 스플래시 · Stack
@@ -172,7 +173,8 @@ where  login_id = '본인아이디';
     │       ├── stats.tsx     참석률 통계 (기간 필터 · 팀 요약 · 추세 · 회원별)
     │       ├── finance/      회비 · 관리자 전용
     │       │   ├── index.tsx      대시보드 (잔액 · 이번 달 요약 · 최근 지출)
-    │       │   ├── payments.tsx   월별 납부 상태 (1탭 저장)
+    │       │   ├── payments.tsx   월별 납부 상태 (1탭 저장) · 관리자
+    │       │   ├── my.tsx         내 회비 (본인 납부 이력, 읽기 전용)
     │       │   ├── expenses.tsx   지출 목록 · 카테고리 필터
     │       │   └── expense-form.tsx
     │       ├── admin/        관리 · 관리자 전용
@@ -211,12 +213,30 @@ where  login_id = '본인아이디';
 | | member | admin | super_admin |
 |---|---|---|---|
 | 일정 조회 / 본인 투표 | ✅ | ✅ | ✅ |
-| 일정 생성·수정·삭제, 투표 마감 | ❌ | ✅ | ✅ |
+| 일정 생성·수정·삭제, 투표 마감·재개 | ❌ | ✅ | ✅ |
+| 출석 기록 (참석·지각·불참·노쇼) | ❌ | ✅ | ✅ |
+| 팀 잔액 · 이번 달 입금/지출 | ✅ 읽기 | ✅ | ✅ |
+| 지출 내역 | ✅ 읽기 | ✅ 쓰기 | ✅ |
+| 회비 납부 — 본인 | ✅ 읽기 | ✅ | ✅ |
+| 회비 납부 — 남의 것 · 미납 인원 | ❌ | ✅ | ✅ |
 | 회원 활성화 / 비활성화 | ❌ | ✅ (member 대상만) | ✅ |
-| 회비 · 지출 조회 및 관리 | ❌ | ✅ | ✅ |
+| 경기장 등록 | ❌ | ✅ | ✅ |
 | admin 임명 / 해임 | ❌ | ❌ | ✅ |
 | super_admin 계정 수정·삭제 | ❌ | ❌ | ✅ |
 | 시스템 설정 · 활동 로그 | ❌ | ❌ | ✅ |
+
+**super_admin 은 팀 명부에 포함되지 않는다.** 개발/운영 계정이라 일정·통계·회비에서
+팀원처럼 섞이면 인원수와 참석률이 오염된다.
+- `fetchActiveMembers()` 가 `role <> 'super_admin'` 으로 걸러 낸다 (명부의 단일 출처)
+- `get_attendance_stats()` / `get_finance_summary()` 도 SQL 에서 제외
+- `summarizeVotes()` · `summarizeAttendance()` 는 **`memberIds` 집합을 받아** 명부에 없는
+  사람의 투표·출석을 세지 않는다. 그러지 않으면 카드의 인원수와 명단 길이가 어긋난다.
+- 회원 관리 화면은 계정을 다루는 곳이므로 `fetchAllMembers()` 로 super_admin 까지 보여준다
+
+**회비 열람 범위** (`0009`): 잔액·지출은 전원 공개, 납부 상황은 본인만.
+일반회원은 RLS 때문에 본인 납부만 조회할 수 있어 클라이언트에서 잔액을 더할 수 없다.
+그래서 `get_finance_summary()` 가 `SECURITY DEFINER` 로 **합계만** 돌려준다 (개인 정보 없음).
+남의 미납 사실은 운영진만 본다 — 대시보드의 '이번 달 미납' 타일은 `isAdmin` 으로 가린다.
 
 **RLS 정책 안에서 `profiles` 를 직접 SELECT 하면 무한 재귀(42P17)가 난다.**
 반드시 `current_profile_id()` / `current_user_role()` / `is_admin()` / `is_super_admin()`

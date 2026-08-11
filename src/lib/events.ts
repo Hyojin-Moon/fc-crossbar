@@ -40,7 +40,11 @@ export const VOTE_WINDOW_LABEL: Record<VoteWindow, string> = {
   closed: '투표 마감',
 };
 
-/** 코드별 득표수 + 미투표 수. memberCount 는 활성 회원 수. */
+/**
+ * 코드별 득표수 + 미투표 수.
+ * memberIds 에 없는 사람(super_admin, 비활성 회원)의 투표는 세지 않는다 —
+ * 그러지 않으면 카드의 인원수와 상세의 명단 길이가 어긋난다.
+ */
 export type VoteSummary = {
   counts: Record<string, number>;
   noVote: number;
@@ -52,7 +56,7 @@ export type VoteSummary = {
 export function summarizeVotes(
   votes: VoteRow[],
   options: VoteOption[],
-  memberCount: number
+  memberIds: Set<string>
 ): VoteSummary {
   const counts: Record<string, number> = {};
   for (const o of options) counts[o.code] = 0;
@@ -63,7 +67,10 @@ export function summarizeVotes(
     options.filter((o) => o.counts_as_attendance).map((o) => o.code)
   );
 
+  let total = 0;
   for (const v of votes) {
+    if (!memberIds.has(v.member_id)) continue;
+    total += 1;
     counts[v.vote] = (counts[v.vote] ?? 0) + 1;
     if (attendanceCodes.has(v.vote)) attendCount += 1;
     guestCount += v.guest_count;
@@ -71,10 +78,10 @@ export function summarizeVotes(
 
   return {
     counts,
-    noVote: Math.max(0, memberCount - votes.length),
+    noVote: Math.max(0, memberIds.size - total),
     attendCount,
     guestCount,
-    total: votes.length,
+    total,
   };
 }
 

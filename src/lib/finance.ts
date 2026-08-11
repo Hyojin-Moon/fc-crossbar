@@ -20,9 +20,47 @@ export type FinanceSummary = {
   totalExpense: number;
   monthIncome: number;
   monthExpense: number;
-  /** 이번 달 미납 회원 수 */
+  /** 이번 달 미납 회원 수. 일반회원에게는 보여주지 않는다 (남의 미납 사실) */
   unpaidCount: number;
 };
+
+/**
+ * 회비 요약은 RPC 로 받는다.
+ * 일반회원은 RLS 때문에 본인 납부만 조회할 수 있어서 클라이언트에서 잔액을 더할 수 없다.
+ * get_finance_summary() 는 SECURITY DEFINER 로 '합계만' 돌려준다 (개인 정보 없음).
+ */
+export async function fetchFinanceSummary(
+  year?: number,
+  month?: number
+): Promise<FinanceSummary> {
+  const { data, error } = await supabase.rpc('get_finance_summary', {
+    p_year: year ?? null,
+    p_month: month ?? null,
+  });
+  if (error) throw error;
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    balance: Number(row?.balance ?? 0),
+    totalIncome: Number(row?.total_income ?? 0),
+    totalExpense: Number(row?.total_expense ?? 0),
+    monthIncome: Number(row?.month_income ?? 0),
+    monthExpense: Number(row?.month_expense ?? 0),
+    unpaidCount: Number(row?.unpaid_count ?? 0),
+  };
+}
+
+/** 본인 납부 이력. RLS 가 어차피 본인 것만 돌려주지만 명시적으로 걸러 둔다. */
+export async function fetchMyPayments(memberId: string): Promise<MembershipPayment[]> {
+  const { data, error } = await supabase
+    .from('membership_payments')
+    .select('*')
+    .eq('member_id', memberId)
+    .order('year', { ascending: false })
+    .order('month', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
 
 type PaymentSlim = Pick<MembershipPayment, 'year' | 'month' | 'amount' | 'status'>;
 type ExpenseSlim = Pick<Expense, 'expense_date' | 'amount'>;

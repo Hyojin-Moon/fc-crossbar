@@ -51,11 +51,12 @@ export default function AppLayout() {
         }}
       />
       {/* 회비 / 관리 탭은 관리자에게만 보인다. RLS 로도 이중 차단되어 있다. */}
+      {/* 회비 탭은 전원에게 보인다. 일반회원은 잔액·지출·본인 납부만 읽기 전용으로 본다.
+          쓰기와 '남의 납부 상황'은 RLS 가 막는다. */}
       <Tabs.Screen
         name="finance"
         options={{
           title: '회비',
-          href: isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
         }}
       />

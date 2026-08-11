@@ -1,19 +1,12 @@
-import { Redirect, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 
-import { FullScreenLoader } from '@/components/ui';
 import { Colors } from '@/constants/theme';
-import { useAuth } from '@/lib/auth-context';
 
 /**
- * 회비 탭. 탭 자체를 관리자에게만 노출하지만, 딥링크로 직접 들어올 수 있으니
- * 여기서도 한 번 더 막는다. (최종 차단은 RLS 가 담당)
+ * 회비 탭. 일반회원도 들어올 수 있다 (잔액 · 지출 · 본인 납부 읽기 전용).
+ * 화면별로 관리자 기능을 가리고, 실제 차단은 RLS 가 담당한다.
  */
 export default function FinanceLayout() {
-  const { profileLoading, isAdmin } = useAuth();
-
-  if (profileLoading) return <FullScreenLoader />;
-  if (!isAdmin) return <Redirect href="/(app)" />;
-
   return (
     <Stack
       screenOptions={{

@@ -35,7 +35,7 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
 export default function AttendanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile, isAdmin } = useAuth();
-  const { members } = useActiveMembers();
+  const { members, memberIds } = useActiveMembers();
   const voteOptions = useVoteOptions();
   const toast = useToast();
 
@@ -78,7 +78,7 @@ export default function AttendanceScreen() {
 
   const byMember = new Map(rows.map((r) => [r.member_id, r]));
   const voteByMember = new Map(event.votes.map((v) => [v.member_id, v.vote]));
-  const summary = summarizeAttendance(rows, members.length);
+  const summary = summarizeAttendance(rows, memberIds);
 
   const setStatus = async (memberId: string, status: AttendanceStatus) => {
     if (!profile || busy) return;

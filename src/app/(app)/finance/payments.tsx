@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<PaymentStatus, string> = {
 };
 
 export default function PaymentsScreen() {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { members } = useActiveMembers();
   const settings = useSettings();
   const toast = useToast();
@@ -60,6 +60,9 @@ export default function PaymentsScreen() {
     setYear(d.getFullYear());
     setMonth(d.getMonth() + 1);
   };
+
+  // 딥링크로 직접 들어오는 경우 차단. 최종 차단은 RLS 가 담당한다.
+  if (!isAdmin) return <Redirect href="/(app)/finance" />;
 
   const byMember = new Map(payments.map((p) => [p.member_id, p]));
 

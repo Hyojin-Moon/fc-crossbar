@@ -25,17 +25,18 @@ import type { VoteCode } from '@/types/database';
 type Props = {
   event: EventWithVotes;
   memberId: string;
-  memberCount: number;
+  /** 팀 명부. 인원수와 '팀원이 아닌 사람의 투표 제외'에 함께 쓴다. */
+  memberIds: Set<string>;
   /** 저장 성공 후 부모가 다시 불러오도록 */
   onChanged: () => void;
   onPressDetail?: () => void;
 };
 
-export function VoteCard({ event, memberId, memberCount, onChanged, onPressDetail }: Props) {
+export function VoteCard({ event, memberId, memberIds, onChanged, onPressDetail }: Props) {
   const toast = useToast();
   const allOptions = useVoteOptions();
   const options = optionsForEvent(event, allOptions);
-  const summary = summarizeVotes(event.votes, allOptions, memberCount);
+  const summary = summarizeVotes(event.votes, allOptions, memberIds);
   const window = getVoteWindow(event);
 
   const serverVote = event.votes.find((v) => v.member_id === memberId)?.vote ?? null;

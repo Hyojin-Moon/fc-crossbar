@@ -22,7 +22,7 @@ import { useVoteOptions } from '@/lib/vote-options';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
-  const { members } = useActiveMembers();
+  const { memberIds } = useActiveMembers();
   const settings = useSettings();
   const voteOptions = useVoteOptions();
 
@@ -91,7 +91,7 @@ export default function HomeScreen() {
                   key={event.id}
                   event={event}
                   memberId={profile.id}
-                  memberCount={members.length}
+                  memberIds={memberIds}
                   onChanged={load}
                   onPressDetail={() => router.push(`/(app)/events/${event.id}`)}
                 />
@@ -107,7 +107,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionTitle>예정 일정</SectionTitle>
                 {others.map((event) => (
-                  <EventRow key={event.id} event={event} memberCount={members.length} options={voteOptions} />
+                  <EventRow key={event.id} event={event} memberIds={memberIds} options={voteOptions} />
                 ))}
               </View>
             ) : null}
@@ -116,7 +116,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionTitle>최근 경기</SectionTitle>
                 {past.map((event) => (
-                  <EventRow key={event.id} event={event} memberCount={members.length} options={voteOptions} />
+                  <EventRow key={event.id} event={event} memberIds={memberIds} options={voteOptions} />
                 ))}
               </View>
             ) : null}
@@ -129,14 +129,14 @@ export default function HomeScreen() {
 
 function EventRow({
   event,
-  memberCount,
+  memberIds,
   options,
 }: {
   event: EventWithVotes;
-  memberCount: number;
+  memberIds: Set<string>;
   options: Parameters<typeof summarizeVotes>[1];
 }) {
-  const summary = summarizeVotes(event.votes, options, memberCount);
+  const summary = summarizeVotes(event.votes, options, memberIds);
 
   return (
     <Pressable

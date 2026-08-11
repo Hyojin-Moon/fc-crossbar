@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -32,7 +32,7 @@ import {
 export default function ExpenseFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEdit = Boolean(id);
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const toast = useToast();
 
   const [loading, setLoading] = useState(isEdit);
@@ -136,6 +136,8 @@ export default function ExpenseFormScreen() {
   };
 
   if (loading) return <FullScreenLoader />;
+  // 딥링크로 직접 들어오는 경우 차단. 최종 차단은 RLS 가 담당한다.
+  if (!isAdmin) return <Redirect href="/(app)/finance" />;
 
   const parsedAmount = Number(form.amount.replace(/[,\s]/g, ''));
 

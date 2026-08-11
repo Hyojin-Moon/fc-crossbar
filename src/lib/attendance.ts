@@ -70,20 +70,26 @@ export type AttendanceSummary = {
   recorded: number;
 };
 
+/** memberIds 에 없는 사람의 기록은 세지 않는다 (super_admin · 비활성 회원). */
 export function summarizeAttendance(
   rows: EventAttendance[],
-  memberCount: number
+  memberIds: Set<string>
 ): AttendanceSummary {
   const counts = { present: 0, late: 0, absent: 0, no_show: 0 } as Record<
     AttendanceStatus,
     number
   >;
-  for (const row of rows) counts[row.status] += 1;
+  let recorded = 0;
+  for (const row of rows) {
+    if (!memberIds.has(row.member_id)) continue;
+    recorded += 1;
+    counts[row.status] += 1;
+  }
 
   return {
     counts,
     attended: counts.present + counts.late,
-    recorded: rows.length,
-    unrecorded: Math.max(0, memberCount - rows.length),
+    recorded,
+    unrecorded: Math.max(0, memberIds.size - recorded),
   };
 }

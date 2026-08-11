@@ -206,6 +206,17 @@ export type Database = {
         Args: { from_date?: string | null; to_date?: string | null };
         Returns: AttendanceStat[];
       };
+      get_finance_summary: {
+        Args: { p_year?: number | null; p_month?: number | null };
+        Returns: {
+          total_income: number;
+          total_expense: number;
+          balance: number;
+          month_income: number;
+          month_expense: number;
+          unpaid_count: number;
+        }[];
+      };
       admin_seed_attendance_from_votes: {
         Args: { p_event_id: string };
         Returns: number;

@@ -16,17 +16,17 @@ import { Card, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
+import { useAuth } from '@/lib/auth-context';
 import {
-  fetchAllExpenses,
-  fetchAllPayments,
   fetchExpenses,
+  fetchFinanceSummary,
   formatWon,
-  summarizeFinance,
   type FinanceSummary,
 } from '@/lib/finance';
 import type { Expense } from '@/types/database';
 
 export default function FinanceDashboardScreen() {
+  const { isAdmin } = useAuth();
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -39,12 +39,13 @@ export default function FinanceDashboardScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [payments, expenses, recentExpenses] = await Promise.all([
-        fetchAllPayments(),
-        fetchAllExpenses(),
+      // 잔액은 RPC 로 받는다. 일반회원은 본인 납부만 조회할 수 있어
+      // 클라이언트에서 합계를 낼 수 없다.
+      const [totals, recentExpenses] = await Promise.all([
+        fetchFinanceSummary(year, month),
         fetchExpenses(5),
       ]);
-      setSummary(summarizeFinance(payments, expenses, year, month));
+      setSummary(totals);
       setRecent(recentExpenses);
       setError(null);
     } catch (e) {
@@ -63,7 +64,10 @@ export default function FinanceDashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="회비" subtitle={`${year}년 ${month}월 · 관리자 전용`} />
+      <ScreenHeader
+        title="회비"
+        subtitle={`${year}년 ${month}월${isAdmin ? '' : ' · 읽기 전용'}`}
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -106,11 +110,14 @@ export default function FinanceDashboardScreen() {
                 value={formatWon(summary.monthExpense)}
                 color={Colors.danger}
               />
-              <Tile
-                label="이번 달 미납"
-                value={`${summary.unpaidCount}명`}
-                color={summary.unpaidCount > 0 ? Colors.warning : Colors.muted}
-              />
+              {/* 남의 미납 사실은 운영진만 본다 */}
+              {isAdmin ? (
+                <Tile
+                  label="이번 달 미납"
+                  value={`${summary.unpaidCount}명`}
+                  color={summary.unpaidCount > 0 ? Colors.warning : Colors.muted}
+                />
+              ) : null}
               <Tile
                 label="이번 달 수지"
                 value={formatWon(summary.monthIncome - summary.monthExpense)}
@@ -118,16 +125,25 @@ export default function FinanceDashboardScreen() {
               />
             </View>
 
-            <MenuRow
-              icon="people"
-              title="회비 납부 내역"
-              subtitle="월별 회원 납부 상태 관리"
-              onPress={() => router.push('/(app)/finance/payments')}
-            />
+            {isAdmin ? (
+              <MenuRow
+                icon="people"
+                title="회비 납부 내역"
+                subtitle="월별 회원 납부 상태 관리"
+                onPress={() => router.push('/(app)/finance/payments')}
+              />
+            ) : (
+              <MenuRow
+                icon="person"
+                title="내 회비"
+                subtitle="본인 납부 이력"
+                onPress={() => router.push('/(app)/finance/my')}
+              />
+            )}
             <MenuRow
               icon="receipt"
               title="회비 사용 내역"
-              subtitle="팀 운영비 지출 기록"
+              subtitle={isAdmin ? '팀 운영비 지출 기록' : '팀 운영비 지출 기록 (읽기 전용)'}
               onPress={() => router.push('/(app)/finance/expenses')}
             />
 
@@ -139,8 +155,12 @@ export default function FinanceDashboardScreen() {
                 recent.map((expense) => (
                   <Pressable
                     key={expense.id}
+                    disabled={!isAdmin}
                     onPress={() => router.push(`/(app)/finance/expense-form?id=${expense.id}`)}
-                    style={({ pressed }) => [styles.expenseRow, pressed && { opacity: 0.7 }]}>
+                    style={({ pressed }) => [
+                      styles.expenseRow,
+                      pressed && isAdmin && { opacity: 0.7 },
+                    ]}>
                     <View style={styles.expenseMain}>
                       <Text style={styles.expenseDesc} numberOfLines={1}>
                         {expense.description}

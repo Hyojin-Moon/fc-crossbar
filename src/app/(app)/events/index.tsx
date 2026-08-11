@@ -33,7 +33,7 @@ type Tab = 'upcoming' | 'past';
 
 export default function EventListScreen() {
   const { profile, isAdmin } = useAuth();
-  const { members } = useActiveMembers();
+  const { memberIds } = useActiveMembers();
   const options = useVoteOptions();
 
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -122,7 +122,7 @@ export default function EventListScreen() {
           </Card>
         ) : (
           events.map((event) => {
-            const summary = summarizeVotes(event.votes, options, members.length);
+            const summary = summarizeVotes(event.votes, options, memberIds);
             const window = getVoteWindow(event);
             const myVote = profile
               ? event.votes.find((v) => v.member_id === profile.id)?.vote ?? null

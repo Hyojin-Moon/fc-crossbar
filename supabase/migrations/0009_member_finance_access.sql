@@ -95,8 +95,15 @@ grant  execute on function public.get_finance_summary(integer, integer) to authe
 
 -- ---------------------------------------------------------------------
 -- 4. 참석률 통계에서 super_admin 제외
---    (반환 컬럼은 그대로라 create or replace 로 충분하다)
+--
+--    create or replace 로는 RETURNS TABLE 의 컬럼 구성을 바꿀 수 없다
+--    ("cannot change return type of existing function"). 이미 다른 컬럼 구성으로
+--    만들어진 DB 에서도 통과하도록 항상 먼저 지운다.
+--    SQL Editor 는 스크립트를 한 트랜잭션으로 돌리므로, 여기서 실패하면
+--    이 파일의 앞부분(정책 · get_finance_summary)까지 전부 롤백된다.
 -- ---------------------------------------------------------------------
+drop function if exists public.get_attendance_stats(date, date);
+
 create or replace function public.get_attendance_stats(
   from_date date default null,
   to_date   date default null

@@ -621,6 +621,8 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 | 로그인은 되는데 "회원 정보를 찾을 수 없습니다" | `0001_schema.sql` 의 `on_auth_user_created` 트리거 미적용. SQL 재실행 후 재가입 |
 | 가입 시 "서버의 이메일 인증 설정이 켜져 있어..." | Authentication > Email > **Confirm email** 을 끈다 |
 | `column profiles.login_id does not exist` | `0004_login_id.sql` 미실행 |
+| `cannot change return type of existing function` | `create or replace` 로는 `RETURNS TABLE` 컬럼 구성을 바꿀 수 없다. **`drop function if exists` 를 먼저** 두어야 한다. SQL Editor 는 스크립트를 한 트랜잭션으로 돌리므로 여기서 실패하면 **그 파일 전체가 롤백**된다 (앞에서 만든 함수·정책까지) |
+| RPC 호출이 `404` | 그 함수가 DB 에 없다. 해당 마이그레이션이 중간에 실패해 롤백됐는지 확인한다 |
 | SQL Editor 에서 `42601 syntax error at or near "update"` | `Limit 100 rows` 를 `No limit` 으로 바꾼다 |
 | `PGRST200` / `Could not find a relationship` | 클라이언트가 참조하는 테이블이 DB 에 없다. `supabase/migrations` 의 최신 SQL 미실행. **앱 코드와 마이그레이션은 항상 같이 나가야 한다** |
 | 에러 자리에 `[object Object]` | Supabase 에러는 `Error` 인스턴스가 아니다. `String(e)` 대신 `describeDbError(e)` 를 쓸 것 |

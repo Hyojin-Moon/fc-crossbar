@@ -26,7 +26,6 @@ export function confirmAsync(options: {
 
   if (Platform.OS === 'web') {
     const text = message ? `${title}\n\n${message}` : title;
-    // eslint-disable-next-line no-alert
     return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : false);
   }
 

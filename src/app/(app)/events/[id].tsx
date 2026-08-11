@@ -76,7 +76,6 @@ export default function EventDetailScreen() {
   const attendanceCounts = { present: 0, late: 0, absent: 0, no_show: 0 };
   for (const record of recordedAttendance) attendanceCounts[record.status] += 1;
 
-  // 코드별 명단 + 미투표 명단
   const groups = [
     ...options
       .filter((o) => event.allowed_votes.includes(o.code))

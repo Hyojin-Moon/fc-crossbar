@@ -32,7 +32,6 @@ function monthsAgo(months: number): string {
   return toLocalISODate(d);
 }
 
-/** 기간 프리셋 -> 실제 날짜 범위. custom 은 화면에서 직접 넘긴다. */
 export function rangeFor(period: PeriodKey): Range {
   const year = new Date().getFullYear();
   switch (period) {
@@ -59,14 +58,11 @@ export type TeamSummary = {
   recordedEvents: number;
   /** 집계 대상 경기 수 (투표 응답률의 분모) */
   targetEvents: number;
-  /** 회원 참석률의 평균 */
   avgRate: number;
-  /** 경기당 평균 참석 인원 (참석 + 지각) */
   avgAttendees: number;
   top: AttendanceStat | null;
 };
 
-/** 출석 기록이 아직 없으면 참석률을 보여줄 수 없다. 화면에서 이 값으로 분기한다. */
 export function hasAttendanceData(rows: AttendanceStat[]): boolean {
   return (rows[0]?.recorded_events ?? 0) > 0;
 }
@@ -106,7 +102,6 @@ export type TrendPoint = {
   eventId: string;
   date: string;
   title: string;
-  /** 실제 출석 인원(참석 + 지각). 출석 기록이 없으면 투표 인원으로 대체한다. */
   attendCount: number;
   fromVotes: boolean;
 };

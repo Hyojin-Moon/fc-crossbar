@@ -18,7 +18,6 @@ export const EXPORT_LABEL: Record<ExportKind, { title: string; description: stri
   },
 };
 
-/** 회비/통계는 기간에 따라 결과가 달라지므로 어떤 구간을 뽑았는지 파일명에 남긴다. */
 function periodSuffix(period: PeriodKey): string {
   const { from, to } = rangeFor(period);
   if (!from && !to) return '전체';
@@ -42,7 +41,6 @@ async function exportMembers(): Promise<SaveResult> {
 }
 
 async function exportPayments(): Promise<SaveResult> {
-  // 회원 이름을 같이 넣어야 사람이 읽을 수 있다. member_id 만 있으면 쓸모가 없다.
   const [{ data, error }, members] = await Promise.all([
     supabase
       .from('membership_payments')

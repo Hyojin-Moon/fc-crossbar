@@ -85,7 +85,6 @@ export default function AttendanceScreen() {
     const current = byMember.get(memberId);
     setBusy(true);
     try {
-      // 같은 버튼을 다시 누르면 기록을 지운다 (실수로 누른 걸 되돌릴 수 있게)
       if (current?.status === status) {
         await clearAttendance(event.id, memberId);
         toast('기록을 지웠습니다.');

@@ -10,9 +10,7 @@
 export type Role = 'super_admin' | 'admin' | 'member';
 export type MemberStatus = 'pending' | 'active' | 'inactive';
 export type EventStatus = 'open' | 'closed' | 'cancelled';
-/** 시즌경기 / 일반경기 / 기타 */
 export type MatchType = 'season' | 'regular' | 'etc';
-/** 실제 출석 상태. 투표(사전 의사)와 별개로 운영진이 기록한다. */
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'no_show';
 export type PaymentStatus = 'paid' | 'unpaid' | 'exempt';
 /** vote_options.code. 기본 3개 + 확장용 3개 */
@@ -140,31 +138,22 @@ export type AdminAuditLog = {
   created_at: string;
 };
 
-/**
- * get_attendance_stats() 결과.
- * 참석률은 실제 출석 기준이고(지각도 참석으로 센다), 투표 응답률은 별개 지표다.
- * 두 숫자를 섞어 쓰지 않도록 컬럼을 분리해 두었다.
- */
 export type AttendanceStat = {
   member_id: string;
   name: string;
-  /** 실제 출석 */
   present_count: number;
   late_count: number;
   absent_count: number;
   no_show_count: number;
   /** 출석 체크가 끝난 경기 수 = 참석률의 분모 */
   recorded_events: number;
-  /** (참석 + 지각) / recorded_events */
   attendance_rate: number;
-  /** 투표 */
   attend_vote_count: number;
   voted_count: number;
   vote_target_events: number;
   vote_response_rate: number;
 };
 
-/** createClient<Database> 에 넘기는 제네릭 타입 */
 type Table<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;

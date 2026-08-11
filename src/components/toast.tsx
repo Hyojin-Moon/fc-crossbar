@@ -17,10 +17,6 @@ const BACKGROUND: Record<ToastKind, string> = {
   info: Colors.navy,
 };
 
-/**
- * ToastAndroid 는 안드로이드 전용이고 색을 바꿀 수 없어서 직접 만든다.
- * 투표 저장 피드백에 쓰이므로 화면을 가리지 않고 빠르게 사라져야 한다.
- */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<ToastState>(null);
   const opacity = useRef(new Animated.Value(0)).current;

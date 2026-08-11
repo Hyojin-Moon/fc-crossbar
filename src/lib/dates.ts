@@ -13,7 +13,6 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-/** 기기 로컬 기준 오늘 날짜를 'YYYY-MM-DD' 로. */
 export function todayLocalISO(): string {
   const now = new Date();
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -29,19 +28,16 @@ export function parseLocalDate(dateStr: string): Date {
   return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
 
-/** '2026-08-16' -> '8월 16일 (일)' */
 export function formatEventDate(dateStr: string): string {
   const d = parseLocalDate(dateStr);
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
 }
 
-/** '2026-08-16' -> '2026년 8월 16일 일요일' */
 export function formatEventDateLong(dateStr: string): string {
   const d = parseLocalDate(dateStr);
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}요일`;
 }
 
-/** '20:00:00' -> '20:00' */
 export function formatTime(time: string | null): string {
   return time ? time.slice(0, 5) : '';
 }
@@ -53,21 +49,18 @@ export function formatTimeRange(start: string | null, end: string | null): strin
   return s || e;
 }
 
-/** timestamptz -> '8월 15일 18:00' */
 export function formatDeadline(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** 오늘로부터 며칠 뒤인지. 오늘=0, 어제=-1 */
 export function daysFromToday(dateStr: string): number {
   const target = parseLocalDate(dateStr).getTime();
   const today = parseLocalDate(todayLocalISO()).getTime();
   return Math.round((target - today) / 86_400_000);
 }
 
-/** 'D-3' / '오늘' / '어제' / '3일 전' */
 export function relativeDayLabel(dateStr: string): string {
   const diff = daysFromToday(dateStr);
   if (diff === 0) return '오늘';
@@ -76,7 +69,6 @@ export function relativeDayLabel(dateStr: string): string {
   return diff > 0 ? `D-${diff}` : `${-diff}일 전`;
 }
 
-/** 마감까지 남은 시간을 사람이 읽는 문장으로. */
 export function timeLeftLabel(iso: string | null): string {
   if (!iso) return '';
   const ms = new Date(iso).getTime() - Date.now();
@@ -87,12 +79,10 @@ export function timeLeftLabel(iso: string | null): string {
   return `${Math.floor(hours / 24)}일 남음`;
 }
 
-/** Date 객체의 시각 부분만 'HH:MM' 으로. DB time 컬럼에 넣을 때 사용. */
 export function toTimeString(date: Date): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/** 'HH:MM' 을 오늘 날짜의 Date 로. 시간 피커 초기값용. */
 export function timeStringToDate(time: string | null, fallbackHour = 20): Date {
   const d = new Date();
   if (time) {

@@ -6,12 +6,6 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { parseLocalDate, toLocalISODate, toTimeString } from '@/lib/dates';
 
-/**
- * 날짜/시간 입력.
- * 값은 항상 문자열('YYYY-MM-DD' 또는 'HH:MM')로 들고 있어서 직접 타이핑도 되고,
- * 아이콘을 누르면 네이티브 피커가 뜬다.
- * 웹에서는 네이티브 피커가 없으므로 타이핑만 지원한다. (관리자 전용 화면)
- */
 type Props = {
   label: string;
   mode: 'date' | 'time';

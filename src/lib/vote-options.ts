@@ -13,7 +13,6 @@ import type { TeamEvent, VoteCode, VoteOption } from '@/types/database';
 let cache: VoteOption[] | null = null;
 let inflight: Promise<VoteOption[]> | null = null;
 
-/** DB 를 못 읽었을 때만 쓰는 최소 기본값. 0001_schema.sql 의 초기 3개와 같다. */
 const FALLBACK: VoteOption[] = [
   { code: 'attend', label: '참석', counts_as_attendance: true, sort_order: 1, is_active: true },
   { code: 'absent', label: '불참', counts_as_attendance: false, sort_order: 2, is_active: true },
@@ -56,7 +55,6 @@ export function useVoteOptions() {
   return options;
 }
 
-/** 이 일정에서 실제로 누를 수 있는 선택지. allowed_votes 순서를 따른다. */
 export function optionsForEvent(event: TeamEvent, all: VoteOption[]): VoteOption[] {
   const byCode = new Map(all.map((o) => [o.code, o]));
   return event.allowed_votes
@@ -69,7 +67,6 @@ export function labelOf(code: VoteCode | null, all: VoteOption[]): string {
   return all.find((o) => o.code === code)?.label ?? code;
 }
 
-/** 참석률 계산에서 '참석'으로 세는 코드들. get_attendance_stats() 와 같은 기준. */
 export function attendanceCodes(all: VoteOption[]): Set<string> {
   return new Set(all.filter((o) => o.counts_as_attendance).map((o) => o.code));
 }

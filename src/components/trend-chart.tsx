@@ -32,7 +32,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
   }
 
   const maxValue = Math.max(...points.map((p) => p.attendCount), 1);
-  // 눈금이 정수로 떨어지게 위쪽을 살짝 올린다
   const yMax = Math.max(2, Math.ceil(maxValue / 2) * 2);
 
   const innerWidth = Math.max(0, width - PAD_LEFT - PAD_RIGHT);
@@ -56,7 +55,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={styles.wrap}>
       {width > 0 ? (
         <Svg width={width} height={PLOT_HEIGHT + AXIS_BAND}>
-          {/* 눈금선은 표면보다 한 단계 진한 실선 하나. 점선은 쓰지 않는다. */}
           {ticks.map((t) => (
             <Line
               key={t}
@@ -96,7 +94,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
               cy={y(p.attendCount)}
               r={labelled.has(i) ? 4.5 : 3}
               fill={Colors.navy}
-              // 겹치는 마커를 분리하는 2px 표면 링
               stroke={Colors.background}
               strokeWidth={2}
             />
@@ -110,7 +107,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
               fontSize={11}
               fontWeight="700"
               fill={Colors.navy}
-              // 첫 점은 y축 눈금 라벨과, 마지막 점은 오른쪽 여백과 겹치므로 안쪽으로 정렬
               textAnchor={i === 0 ? 'start' : i === lastIndex ? 'end' : 'middle'}>
               {String(points[i].attendCount)}
             </SvgText>

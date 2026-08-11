@@ -25,7 +25,6 @@ export async function fetchActiveMembers(): Promise<MemberBrief[]> {
   return data ?? [];
 }
 
-/** 실명제라 이름만 쓴다. 표시 규칙을 한 곳에 모아 두기 위해 헬퍼는 유지한다. */
 export function displayName(member: MemberBrief | undefined): string {
   return member?.name ?? '(알 수 없음)';
 }
@@ -48,7 +47,6 @@ export function useActiveMembers() {
     void reload();
   }, [reload]);
 
-  // 집계에서 '팀원이 아닌 사람의 투표/출석'을 걸러내는 데 쓴다
   const memberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
 
   return { members, memberIds, loading, reload };

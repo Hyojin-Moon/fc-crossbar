@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
   field: { gap: Spacing.one },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   input: {
+    // 웹에서 두 칸 배치 시 컨테이너를 넘치지 않도록 (datetime-input.tsx 참고)
     minWidth: 0,
     minHeight: 50,
     borderWidth: 1,

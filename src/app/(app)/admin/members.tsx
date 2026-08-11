@@ -83,7 +83,6 @@ export default function MembersScreen() {
     inactive: members.filter((m) => m.status === 'inactive').length,
   };
 
-  // 승인 대기를 맨 위로 올린다 (관리자가 할 일)
   const sorted = [...members].sort((a, b) => {
     const rank = (m: Profile) => (m.status === 'pending' ? 0 : m.status === 'active' ? 1 : 2);
     return rank(a) - rank(b) || a.name.localeCompare(b.name, 'ko');

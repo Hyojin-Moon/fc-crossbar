@@ -52,12 +52,9 @@ export default function SignUpScreen() {
     try {
       const { needsEmailConfirm } = await signUp(form);
       if (needsEmailConfirm) {
-        // 아이디 로그인 방식에서는 실제 메일함이 없으므로 인증 메일을 받을 수 없다.
-        // Supabase 의 Confirm email 설정이 켜져 있다는 뜻이라 관리자가 꺼 줘야 한다.
         toast('서버의 이메일 인증 설정이 켜져 있어 가입을 완료할 수 없습니다.', 'error');
         router.replace('/(auth)/sign-in');
       }
-      // 정상 설정이면 바로 세션이 생기고 (auth)/_layout 이 홈으로 보낸다.
     } catch (e) {
       toast(describeAuthError(e), 'error');
     } finally {

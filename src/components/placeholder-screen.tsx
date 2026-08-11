@@ -4,7 +4,6 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Card, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 
-/** 아직 구현되지 않은 Phase 의 자리 표시 화면. */
 export function PlaceholderScreen({
   title,
   subtitle,

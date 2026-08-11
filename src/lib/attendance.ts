@@ -15,7 +15,6 @@ export const ATTENDANCE_LABEL: Record<AttendanceStatus, string> = {
   no_show: '노쇼',
 };
 
-/** 참석률에 포함되는 상태. get_attendance_stats() 와 같은 기준. */
 export const COUNTS_AS_ATTENDED: AttendanceStatus[] = ['present', 'late'];
 
 export async function fetchEventAttendance(eventId: string): Promise<EventAttendance[]> {

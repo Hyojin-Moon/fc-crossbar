@@ -46,14 +46,12 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // 상세 화면에서 투표하고 돌아왔을 때 인원수가 갱신되도록 포커스마다 다시 읽는다.
   useFocusEffect(
     useCallback(() => {
       void load();
     }, [load])
   );
 
-  // 투표할 수 있는(또는 곧 열리는) 일정을 가장 위에 크게 보여준다.
   const votable = upcoming.filter((e) => getVoteWindow(e) !== 'closed');
   const others = upcoming.filter((e) => getVoteWindow(e) === 'closed');
 

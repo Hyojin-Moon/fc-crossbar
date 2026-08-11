@@ -87,7 +87,6 @@ export default function StatsScreen() {
         subtitle={`${PERIOD_LABELS[period]} · 실제 출석 기준`}
       />
 
-      {/* 필터는 한 줄로 모아 두고, 아래 모든 카드가 같은 구간을 본다. */}
       <View style={styles.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {PERIODS.map((p) => (

@@ -11,7 +11,6 @@ import { AuthProvider, useAuth } from '@/lib/auth-context';
 
 SplashScreen.preventAutoHideAsync();
 
-/** 저장된 세션 복원이 끝날 때까지 스플래시를 유지한다. */
 function SplashGate() {
   const { initializing } = useAuth();
   useEffect(() => {

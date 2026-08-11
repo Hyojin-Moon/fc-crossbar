@@ -31,15 +31,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     // Supabase 세션 JSON 이 이를 자주 넘기므로 사용하지 않는다.
     storage: AsyncStorage,
     persistSession: true,
-    // access token 만료 시 refresh token 으로 자동 갱신
     autoRefreshToken: true,
     // 딥링크에서 세션을 파싱하는 웹 전용 동작. 네이티브에서는 꺼야 한다.
     detectSessionInUrl: false,
   },
 });
 
-// 앱이 백그라운드로 가면 갱신 타이머를 멈추고, 돌아오면 다시 시작한다.
-// 이 처리가 없으면 앱을 오래 백그라운드에 둔 뒤 복귀했을 때 토큰이 만료된 채로 남는다.
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (state) => {
     if (state === 'active') {

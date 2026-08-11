@@ -19,14 +19,12 @@ export function loginIdToEmail(loginId: string): string {
   return `${normalizeLoginId(loginId)}@${INTERNAL_EMAIL_DOMAIN}`;
 }
 
-/** 내부 도메인 계정이면 아이디를, 실제 이메일 계정이면 이메일을 그대로 돌려준다. */
 export function emailToLoginId(email: string | undefined): string {
   if (!email) return '';
   const suffix = `@${INTERNAL_EMAIL_DOMAIN}`;
   return email.endsWith(suffix) ? email.slice(0, -suffix.length) : email;
 }
 
-/** 문제가 없으면 null, 있으면 사용자에게 보여줄 메시지를 돌려준다. */
 export function validateLoginId(loginId: string): string | null {
   const id = normalizeLoginId(loginId);
   if (!id) return '아이디를 입력해 주세요.';

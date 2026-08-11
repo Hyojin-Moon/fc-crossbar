@@ -25,9 +25,7 @@ import type { VoteCode } from '@/types/database';
 type Props = {
   event: EventWithVotes;
   memberId: string;
-  /** 팀 명부. 인원수와 '팀원이 아닌 사람의 투표 제외'에 함께 쓴다. */
   memberIds: Set<string>;
-  /** 저장 성공 후 부모가 다시 불러오도록 */
   onChanged: () => void;
   onPressDetail?: () => void;
 };

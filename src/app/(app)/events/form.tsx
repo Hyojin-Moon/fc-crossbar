@@ -23,7 +23,6 @@ import { describeDbError } from '@/lib/errors';
 import { MATCH_TYPES, MATCH_TYPE_LABEL, useVenues } from '@/lib/venues';
 import type { MatchType } from '@/types/database';
 
-/** 'YYYY-MM-DD' + 'HH:MM' -> 로컬 시각 Date. 형식이 틀리면 null. */
 function combineLocal(dateStr: string, timeStr: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
   if (!/^\d{1,2}:\d{2}$/.test(timeStr)) return null;
@@ -41,11 +40,6 @@ function shiftDays(dateStr: string, days: number): string {
   ).padStart(2, '0')}`;
 }
 
-/**
- * 새 일정 기본값.
- * 경기는 오전 8시~10시, 투표는 '지금'부터 3일 뒤 같은 시각까지로 채워 둔다.
- * useState 초기화 함수로 넘겨서 렌더마다 다시 계산되지 않게 한다.
- */
 function makeDefaults() {
   const now = new Date();
   const nowTime = toTimeString(now);
@@ -141,7 +135,6 @@ export default function EventFormScreen() {
       if (value && !/^\d{1,2}:\d{2}$/.test(value)) return `${label}을 HH:MM 형식으로 입력해 주세요.`;
     }
 
-    // 투표 시작: 비어 있으면 지금부터
     let voteOpenAt = new Date();
     if (form.voteOpenDate) {
       const parsed = combineLocal(form.voteOpenDate, form.voteOpenTime || '00:00');
@@ -149,7 +142,6 @@ export default function EventFormScreen() {
       voteOpenAt = parsed;
     }
 
-    // 투표 마감: 비어 있으면 경기 전날 18:00 을 기본값으로 채운다
     const deadlineDate = form.voteDeadlineDate || shiftDays(form.eventDate, -1);
     const deadline = combineLocal(deadlineDate, form.voteDeadlineTime || '18:00');
     if (!deadline) return '투표 마감 일시를 확인해 주세요.';

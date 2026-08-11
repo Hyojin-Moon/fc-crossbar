@@ -9,7 +9,6 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   exempt: '면제',
 };
 
-/** 1,234,000원 형태로. */
 export function formatWon(amount: number): string {
   return `${amount.toLocaleString('ko-KR')}원`;
 }
@@ -20,7 +19,6 @@ export type FinanceSummary = {
   totalExpense: number;
   monthIncome: number;
   monthExpense: number;
-  /** 이번 달 미납 회원 수. 일반회원에게는 보여주지 않는다 (남의 미납 사실) */
   unpaidCount: number;
 };
 
@@ -141,7 +139,6 @@ export type PaymentInput = {
   memo: string | null;
 };
 
-/** (member_id, year, month) UNIQUE 이므로 upsert 로 갱신한다. */
 export async function savePayment(input: PaymentInput, createdBy: string) {
   const { error } = await supabase
     .from('membership_payments')

@@ -32,7 +32,6 @@ export default function SignInScreen() {
     setSubmitting(true);
     try {
       await signIn(loginId, password);
-      // 로그인 성공 시 (auth)/_layout 의 Redirect 가 홈으로 보낸다.
     } catch (e) {
       toast(describeAuthError(e), 'error');
     } finally {

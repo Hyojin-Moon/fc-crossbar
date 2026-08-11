@@ -39,8 +39,6 @@ export default function FinanceDashboardScreen() {
 
   const load = useCallback(async () => {
     try {
-      // 잔액은 RPC 로 받는다. 일반회원은 본인 납부만 조회할 수 있어
-      // 클라이언트에서 합계를 낼 수 없다.
       const [totals, recentExpenses] = await Promise.all([
         fetchFinanceSummary(year, month),
         fetchExpenses(5),
@@ -66,7 +64,7 @@ export default function FinanceDashboardScreen() {
     <View style={styles.screen}>
       <ScreenHeader
         title="회비"
-        subtitle={`${year}년 ${month}월${isAdmin ? '' : ' · 읽기 전용'}`}
+        subtitle={`${year}년 ${month}월`}
       />
       <ScrollView
         contentContainerStyle={styles.content}
@@ -110,7 +108,6 @@ export default function FinanceDashboardScreen() {
                 value={formatWon(summary.monthExpense)}
                 color={Colors.danger}
               />
-              {/* 남의 미납 사실은 운영진만 본다 */}
               {isAdmin ? (
                 <Tile
                   label="이번 달 미납"
@@ -143,7 +140,7 @@ export default function FinanceDashboardScreen() {
             <MenuRow
               icon="receipt"
               title="회비 사용 내역"
-              subtitle={isAdmin ? '팀 운영비 지출 기록' : '팀 운영비 지출 기록 (읽기 전용)'}
+              subtitle="팀 운영비 지출 기록"
               onPress={() => router.push('/(app)/finance/expenses')}
             />
 

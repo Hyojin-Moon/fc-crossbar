@@ -19,13 +19,11 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // 탭을 떠나면 그 탭 안의 스택을 첫 화면으로 되돌린다.
-        // (일정 상세를 보다 다른 탭에 갔다 오면 목록부터 보여야 한다)
+        // 탭을 떠나면 그 탭의 중첩 스택을 첫 화면으로 되돌린다
         popToTopOnBlur: true,
         tabBarActiveTintColor: Colors.navy,
         tabBarInactiveTintColor: Colors.muted,
-        // height/paddingBottom 을 고정하면 edge-to-edge 환경에서 제스처 바에 가린다.
-        // 안전영역 처리는 bottom-tabs 에 맡긴다.
+        // height 를 고정하면 edge-to-edge 환경에서 제스처 바에 가린다
         tabBarStyle: { borderTopColor: Colors.border },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
@@ -50,7 +48,6 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
         }}
       />
-      {/* 회비 / 관리 탭은 관리자에게만 보인다. RLS 로도 이중 차단되어 있다. */}
       {/* 회비 탭은 전원에게 보인다. 일반회원은 잔액·지출·본인 납부만 읽기 전용으로 본다.
           쓰기와 '남의 납부 상황'은 RLS 가 막는다. */}
       <Tabs.Screen
@@ -60,6 +57,7 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
         }}
       />
+      {/* href: undefined = 표시, null = 숨김 */}
       <Tabs.Screen
         name="admin"
         options={{
@@ -68,7 +66,6 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />
-      {/* 일반 회원은 '내 정보' 탭을 쓰고, 관리자는 '관리' 화면에서 들어간다. */}
       <Tabs.Screen
         name="profile"
         options={{

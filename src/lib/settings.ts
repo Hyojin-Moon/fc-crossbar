@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
-/**
- * app_settings 는 거의 바뀌지 않고 홈 화면 헤더처럼 자주 그려지는 곳에서 쓰이므로
- * vote-options 와 같은 방식으로 모듈 레벨에 캐시한다.
- */
 export type AppSettings = {
   teamName: string;
   monthlyFeeAmount: number;
@@ -59,7 +55,6 @@ export async function loadSettings(): Promise<AppSettings> {
   return inflight;
 }
 
-/** 설정을 바꾼 뒤 호출한다. 캐시를 비우고 다시 읽어 구독 중인 화면을 갱신한다. */
 export function invalidateSettings() {
   cache = null;
   void loadSettings().then((next) => {

@@ -1,6 +1,3 @@
-/** Supabase 에러 메시지를 한국어로 바꿔 준다. 매칭 안 되면 원문을 그대로 보여준다. */
-// 로그인은 아이디 기반이지만 Supabase 는 내부적으로 email 을 쓰므로
-// 메시지에 '이메일' 이라는 단어가 그대로 나온다. 아이디 기준으로 바꿔서 보여준다.
 const AUTH_MESSAGES: Record<string, string> = {
   'Invalid login credentials': '아이디 또는 비밀번호가 올바르지 않습니다.',
   'Email not confirmed': '서버의 이메일 인증 설정이 켜져 있습니다. 관리자에게 문의해 주세요.',
@@ -35,7 +32,6 @@ function messageOf(error: unknown): { message: string; code?: string } {
 export function describeDbError(error: unknown): string {
   const { message, code } = messageOf(error);
 
-  // 클라이언트가 참조하는 테이블/관계가 DB 에 없다 = 마이그레이션 미실행
   if (code === 'PGRST200' || code === '42P01' || message.includes('Could not find')) {
     return 'DB 스키마가 앱보다 오래되었습니다. supabase/migrations 의 최신 SQL 을 실행해 주세요.';
   }

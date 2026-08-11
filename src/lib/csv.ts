@@ -24,7 +24,6 @@ function escapeCell(value: unknown): string {
 export function buildCsv(headers: string[], rows: unknown[][]): string {
   const lines = [headers.map(escapeCell).join(',')];
   for (const row of rows) lines.push(row.map(escapeCell).join(','));
-  // Excel 호환을 위해 CRLF
   return BOM + lines.join('\r\n') + '\r\n';
 }
 
@@ -65,7 +64,6 @@ export async function saveCsv(filename: string, content: string): Promise<SaveRe
   return { shared: false, uri: file.uri };
 }
 
-/** fc-crossbar_회비납부_2026-08.csv 형태의 파일명 */
 export function csvFilename(kind: string, suffix?: string): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');

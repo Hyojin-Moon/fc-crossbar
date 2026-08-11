@@ -13,7 +13,6 @@ export const STATUS_LABEL: Record<MemberStatus, string> = {
   inactive: '비활성',
 };
 
-/** 관리자는 비활성·승인대기 회원까지 볼 수 있다 (profiles_select 정책의 is_admin 분기). */
 export async function fetchAllMembers(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
@@ -73,7 +72,6 @@ export const ACTION_LABEL: Record<string, string> = {
   delete_member: '회원 삭제',
 };
 
-/** 감사 로그의 detail(jsonb)을 한 줄로 요약한다. */
 export function describeAuditDetail(action: string, detail: unknown): string {
   if (!detail || typeof detail !== 'object') return '';
   const d = detail as Record<string, unknown>;

@@ -39,7 +39,6 @@ export default function ExpensesScreen() {
   const filtered = category ? expenses.filter((e) => e.category === category) : expenses;
   const total = filtered.reduce((sum, e) => sum + e.amount, 0);
 
-  // 카테고리별 합계 (전체 목록 기준)
   const byCategory = EXPENSE_CATEGORIES.map((c) => ({
     category: c as string,
     total: expenses.filter((e) => e.category === c).reduce((s, e) => s + e.amount, 0),

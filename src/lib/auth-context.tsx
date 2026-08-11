@@ -22,11 +22,9 @@ export type SignUpInput = {
 };
 
 type AuthContextValue = {
-  /** 최초 세션 복원이 끝났는지. false 인 동안은 스플래시를 유지한다. */
   initializing: boolean;
   session: Session | null;
   profile: Profile | null;
-  /** 세션은 있는데 profiles 행을 아직 못 읽은 상태 */
   profileLoading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -66,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     mounted.current = true;
 
-    // 1) 저장된 세션 복원 (자동 로그인). 만료되었으면 supabase-js 가 refresh 를 시도한다.
     supabase.auth
       .getSession()
       .then(async ({ data }) => {
@@ -78,8 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted.current) setInitializing(false);
       });
 
-    // 2) 이후 로그인/로그아웃/토큰갱신을 구독.
-    //    refresh 가 최종 실패하면 SIGNED_OUT 이 와서 로그인 화면으로 되돌아간다.
     const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted.current) return;
       setSession(nextSession);
@@ -88,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         return;
       }
-      // TOKEN_REFRESHED 마다 다시 읽을 필요는 없다.
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         void loadProfile(nextSession.user.id);
       }
@@ -112,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email: loginIdToEmail(input.loginId),
       password: input.password,
-      // handle_new_user 트리거가 이 값으로 profiles 행을 만든다.
       options: {
         data: {
           name: input.name.trim(),
@@ -121,7 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) throw error;
-    // 이메일 확인이 켜져 있으면 session 이 null 로 온다.
     return { needsEmailConfirm: !data.session };
   }, []);
 

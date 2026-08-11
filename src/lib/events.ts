@@ -17,7 +17,6 @@ export type AttendanceRow = {
 
 export type EventWithVotes = TeamEvent & {
   votes: VoteRow[];
-  /** 실제 출석 기록. 임베드하지 않은 조회에서는 undefined. */
   attendance?: AttendanceRow[];
 };
 
@@ -88,7 +87,6 @@ export function summarizeVotes(
 const EVENT_SELECT =
   '*, votes:event_votes(id, member_id, vote, guest_count), attendance:event_attendance(id, member_id, status)';
 
-/** 오늘 이후(오늘 포함) 일정. 가까운 순. */
 export async function fetchUpcomingEvents(): Promise<EventWithVotes[]> {
   const { data, error } = await supabase
     .from('events')
@@ -100,7 +98,6 @@ export async function fetchUpcomingEvents(): Promise<EventWithVotes[]> {
   return (data ?? []) as unknown as EventWithVotes[];
 }
 
-/** 지난 일정. 최근 순. */
 export async function fetchPastEvents(limit = 30): Promise<EventWithVotes[]> {
   const { data, error } = await supabase
     .from('events')
@@ -112,12 +109,6 @@ export async function fetchPastEvents(limit = 30): Promise<EventWithVotes[]> {
   return (data ?? []) as unknown as EventWithVotes[];
 }
 
-/**
- * 참석률 통계에 들어가는 일정. get_attendance_stats() 와 같은 조건을 쓴다.
- *  - include_attendance_stats = true
- *  - 취소된 일정 제외
- *  - 아직 치르지 않은 일정 제외
- */
 export async function fetchStatsEvents(
   from: string | null,
   to: string | null
@@ -170,8 +161,6 @@ export async function deleteVote(eventId: string, memberId: string) {
     .eq('member_id', memberId);
   if (error) throw error;
 }
-
-// --- 관리자 ---------------------------------------------------------------
 
 export type EventInput = {
   title: string;

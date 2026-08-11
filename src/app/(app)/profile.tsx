@@ -34,7 +34,6 @@ export default function ProfileScreen() {
     }
 
     setSaving(true);
-    // role / status 는 authenticated 롤에 UPDATE 권한 자체가 없다. (0001_schema.sql 참고)
     const { error } = await supabase
       .from('profiles')
       .update({ name: name.trim(), phone: phone.trim() || null })

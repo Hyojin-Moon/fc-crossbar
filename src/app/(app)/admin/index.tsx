@@ -34,6 +34,12 @@ export default function AdminMenuScreen() {
             onPress={() => router.push('/(app)/admin/teams')}
           />
           <MenuRow
+            icon="trophy"
+            title="시즌 관리"
+            subtitle="기간 · 참가 팀 · 시즌별 명단"
+            onPress={() => router.push('/(app)/admin/seasons')}
+          />
+          <MenuRow
             icon="location"
             title="경기장 관리"
             subtitle="미리 등록해 두면 일정 만들 때 골라 쓴다"

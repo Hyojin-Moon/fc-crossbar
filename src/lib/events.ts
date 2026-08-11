@@ -172,6 +172,14 @@ export type EventInput = {
   venue_address: string | null;
   map_url: string | null;
   match_type: MatchType;
+  /**
+   * 시즌 경기일 때만 채운다. events_season_match_check 가
+   * match_type='season' 이면 세 값 모두 있고 두 팀이 달라야 한다고 강제하므로,
+   * 유형을 시즌경기에서 다른 값으로 바꿀 때 반드시 null 로 되돌려야 한다.
+   */
+  season_id: string | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
   description: string | null;
   vote_open_at: string;
   vote_deadline: string | null;

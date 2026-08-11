@@ -40,6 +40,16 @@ export type TeamEvent = {
   venue_address: string | null;
   map_url: string | null;
   match_type: MatchType;
+  /**
+   * 시즌 경기일 때만 채운다. events_season_match_check 가
+   * match_type='season' 이면 season_id·양 팀 모두 있고 두 팀이 달라야 한다고 강제한다.
+   */
+  season_id: string | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  /** events_score_check: 둘 다 null 이거나 둘 다 값이 있어야 한다 */
+  home_score: number | null;
+  away_score: number | null;
   description: string | null;
   vote_open_at: string;
   vote_deadline: string | null;
@@ -85,6 +95,36 @@ export type EventAttendance = {
   recorded_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type SeasonStatus = 'upcoming' | 'active' | 'closed';
+
+export type Season = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  status: SeasonStatus;
+  memo: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SeasonTeam = {
+  id: string;
+  season_id: string;
+  team_id: string;
+  created_at: string;
+};
+
+/** 시즌별 명단. season_team_id 와 season_id 를 함께 들고 복합 FK 로 묶여 있다. */
+export type SeasonTeamMember = {
+  id: string;
+  season_id: string;
+  season_team_id: string;
+  member_id: string;
+  created_at: string;
 };
 
 export type Team = {
@@ -137,6 +177,64 @@ export type MembershipPayment = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * 연납. membership_payments 는 (member_id, year, month) 가 NOT NULL 이라
+ * 연납을 끼워 넣을 수 없어서 별도 테이블이다.
+ */
+export type AnnualPayment = {
+  id: string;
+  member_id: string;
+  year: number;
+  amount: number;
+  payment_date: string | null;
+  memo: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** 스탯 항목은 컬럼이 아니라 데이터다. 화면에서 하드코딩하지 말 것. */
+export type StatType = {
+  code: string;
+  label: string;
+  /** 한 경기에 여러 번 셀 수 있는가 (득점=여러 개, MOM=한 번) */
+  is_countable: boolean;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type MemberMatchStat = {
+  id: string;
+  event_id: string;
+  member_id: string;
+  stat_type: string;
+  value: number;
+  memo: string | null;
+  recorded_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SeasonStanding = {
+  team_id: string;
+  team_name: string;
+  played: number;
+  win: number;
+  draw: number;
+  loss: number;
+  goals_for: number;
+  goals_against: number;
+  goal_diff: number;
+  points: number;
+};
+
+export type MemberStatTotal = {
+  member_id: string;
+  name: string;
+  stat_type: string;
+  total: number;
 };
 
 export type Expense = {
@@ -202,6 +300,16 @@ export type Database = {
       >;
       vote_options: Table<VoteOption>;
       teams: Table<Team, Pick<Team, 'name'> & Partial<Team>>;
+      seasons: Table<Season, Pick<Season, 'name' | 'start_date' | 'end_date'> & Partial<Season>>;
+      season_teams: Table<
+        SeasonTeam,
+        Pick<SeasonTeam, 'season_id' | 'team_id'> & Partial<SeasonTeam>
+      >;
+      team_members: Table<
+        SeasonTeamMember,
+        Pick<SeasonTeamMember, 'season_id' | 'season_team_id' | 'member_id'> &
+          Partial<SeasonTeamMember>
+      >;
       team_base_members: Table<
         TeamBaseMember,
         Pick<TeamBaseMember, 'team_id' | 'member_id'> & Partial<TeamBaseMember>
@@ -214,6 +322,15 @@ export type Database = {
       membership_payments: Table<
         MembershipPayment,
         Pick<MembershipPayment, 'member_id' | 'year' | 'month'> & Partial<MembershipPayment>
+      >;
+      membership_annual_payments: Table<
+        AnnualPayment,
+        Pick<AnnualPayment, 'member_id' | 'year' | 'amount'> & Partial<AnnualPayment>
+      >;
+      stat_types: Table<StatType>;
+      member_match_stats: Table<
+        MemberMatchStat,
+        Pick<MemberMatchStat, 'event_id' | 'member_id' | 'stat_type'> & Partial<MemberMatchStat>
       >;
       expenses: Table<
         Expense,
@@ -242,6 +359,20 @@ export type Database = {
           month_expense: number;
           unpaid_count: number;
         }[];
+      };
+      admin_copy_season_roster: {
+        Args: { from_season_id: string; to_season_id: string };
+        Returns: number;
+      };
+      get_season_standings: {
+        Args: { p_season_id: string };
+        Returns: SeasonStanding[];
+      };
+      // from_date / to_date 는 p_ 접두사가 없고 p_season_id 만 있다. 마이그레이션과 정확히 같아야 하며
+      // 이름이 하나라도 틀리면 PGRST202(함수 없음)로 실패한다.
+      get_member_stat_totals: {
+        Args: { from_date?: string | null; to_date?: string | null; p_season_id?: string | null };
+        Returns: MemberStatTotal[];
       };
       admin_seed_attendance_from_votes: {
         Args: { p_event_id: string };

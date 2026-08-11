@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/auth-context';
 import { formatTime, todayLocalISO, toTimeString } from '@/lib/dates';
 import { createEvent, fetchEvent, updateEvent, type EventInput } from '@/lib/events';
 import { describeDbError } from '@/lib/errors';
+import { fetchSeasonSquads, useSeasons, type SeasonSquad } from '@/lib/seasons';
 import { MATCH_TYPES, MATCH_TYPE_LABEL, useVenues } from '@/lib/venues';
 import type { MatchType } from '@/types/database';
 
@@ -51,6 +52,9 @@ function makeDefaults() {
     startTime: '08:00',
     endTime: '10:00',
     matchType: 'regular' as MatchType,
+    seasonId: '',
+    homeTeamId: '',
+    awayTeamId: '',
     venueId: '',
     venueName: '',
     venueAddress: '',
@@ -71,13 +75,46 @@ export default function EventFormScreen() {
   const { profile } = useAuth();
   const toast = useToast();
   const { venues } = useVenues();
+  const { seasons } = useSeasons();
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(makeDefaults);
+  const [squads, setSquads] = useState<SeasonSquad[]>([]);
 
   const set = (key: keyof typeof form) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  // 유형을 바꿀 때 시즌 관련 값을 정리한다. events_season_match_check 가
+  // '시즌경기가 아니면 세 값 모두 null' 을 요구하므로 화면에서만 숨기면 저장이 막힌다.
+  const setMatchType = (type: MatchType) =>
+    setForm((prev) =>
+      type === 'season'
+        ? { ...prev, matchType: type }
+        : { ...prev, matchType: type, seasonId: '', homeTeamId: '', awayTeamId: '' }
+    );
+
+  // 참가 팀은 시즌마다 다르다 — 시즌을 바꾸면 골라둔 팀도 버린다.
+  const selectSeason = (seasonId: string) =>
+    setForm((prev) =>
+      prev.seasonId === seasonId
+        ? prev
+        : { ...prev, seasonId, homeTeamId: '', awayTeamId: '' }
+    );
+
+  useEffect(() => {
+    if (!form.seasonId) {
+      setSquads([]);
+      return;
+    }
+    void (async () => {
+      try {
+        setSquads(await fetchSeasonSquads(form.seasonId));
+      } catch (e) {
+        toast(describeDbError(e), 'error');
+      }
+    })();
+  }, [form.seasonId, toast]);
 
   useEffect(() => {
     if (!id) return;
@@ -104,6 +141,9 @@ export default function EventFormScreen() {
           startTime: formatTime(event.start_time),
           endTime: formatTime(event.end_time),
           matchType: event.match_type,
+          seasonId: event.season_id ?? '',
+          homeTeamId: event.home_team_id ?? '',
+          awayTeamId: event.away_team_id ?? '',
           venueId: event.venue_id ?? '',
           venueName: event.venue_name ?? '',
           venueAddress: event.venue_address ?? '',
@@ -152,12 +192,22 @@ export default function EventFormScreen() {
     const max = form.maxAttendees.trim();
     if (max && !/^\d+$/.test(max)) return '최대 참석인원은 숫자만 입력해 주세요.';
 
+    const isSeason = form.matchType === 'season';
+    if (isSeason) {
+      if (!form.seasonId) return '시즌을 골라 주세요.';
+      if (!form.homeTeamId || !form.awayTeamId) return '홈 팀과 원정 팀을 모두 골라 주세요.';
+      if (form.homeTeamId === form.awayTeamId) return '홈 팀과 원정 팀이 같습니다.';
+    }
+
     return {
       title: form.title.trim(),
       event_date: form.eventDate,
       start_time: form.startTime || null,
       end_time: form.endTime || null,
       match_type: form.matchType,
+      season_id: isSeason ? form.seasonId : null,
+      home_team_id: isSeason ? form.homeTeamId : null,
+      away_team_id: isSeason ? form.awayTeamId : null,
       venue_id: form.venueId || null,
       // 경기장 정보는 '복사'해 저장한다. 나중에 경기장 등록 정보가 바뀌어도
       // 지난 경기 기록은 당시 값을 유지해야 한다.
@@ -220,7 +270,7 @@ export default function EventFormScreen() {
                 {MATCH_TYPES.map((type) => (
                   <Pressable
                     key={type}
-                    onPress={() => setForm((prev) => ({ ...prev, matchType: type }))}
+                    onPress={() => setMatchType(type)}
                     style={[styles.chip, form.matchType === type && styles.chipActive]}>
                     <Text
                       style={[styles.chipText, form.matchType === type && styles.chipTextActive]}>
@@ -230,6 +280,80 @@ export default function EventFormScreen() {
                 ))}
               </View>
             </View>
+
+            {form.matchType === 'season' ? (
+              seasons.length === 0 ? (
+                <Muted>
+                  등록된 시즌이 없습니다. 관리 &gt; 시즌 관리에서 시즌을 먼저 만들어 주세요.
+                </Muted>
+              ) : (
+                <>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>시즌</Text>
+                    <View style={styles.chips}>
+                      {seasons.map((season) => (
+                        <Pressable
+                          key={season.id}
+                          onPress={() => selectSeason(season.id)}
+                          style={[styles.chip, form.seasonId === season.id && styles.chipActive]}>
+                          <Text
+                            style={[
+                              styles.chipText,
+                              form.seasonId === season.id && styles.chipTextActive,
+                            ]}>
+                            {season.name}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
+                  {!form.seasonId ? null : squads.length < 2 ? (
+                    <Muted>
+                      이 시즌의 참가 팀이 2팀 미만입니다. 시즌 관리에서 팀을 추가해 주세요.
+                    </Muted>
+                  ) : (
+                    (
+                      [
+                        ['홈 팀', 'homeTeamId', 'awayTeamId'],
+                        ['원정 팀', 'awayTeamId', 'homeTeamId'],
+                      ] as const
+                    ).map(([label, key, otherKey]) => (
+                      <View key={key} style={styles.field}>
+                        <Text style={styles.label}>{label}</Text>
+                        <View style={styles.chips}>
+                          {squads.map((squad) => {
+                            const selected = form[key] === squad.teamId;
+                            // 같은 팀끼리 붙일 수 없다 (events_season_match_check)
+                            const takenByOther = form[otherKey] === squad.teamId;
+                            return (
+                              <Pressable
+                                key={squad.teamId}
+                                disabled={takenByOther}
+                                onPress={() => setForm((prev) => ({ ...prev, [key]: squad.teamId }))}
+                                style={[
+                                  styles.chip,
+                                  selected && styles.chipActive,
+                                  takenByOther && styles.chipDisabled,
+                                ]}>
+                                <Text
+                                  style={[
+                                    styles.chipText,
+                                    selected && styles.chipTextActive,
+                                    takenByOther && styles.chipTextDisabled,
+                                  ]}>
+                                  {squad.teamName}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </>
+              )
+            ) : null}
             <DateTimeInput
               label="날짜"
               mode="date"
@@ -406,8 +530,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
+  chipDisabled: { opacity: 0.4 },
   chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   chipTextActive: { color: Colors.textOnNavy },
+  chipTextDisabled: { color: Colors.muted },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
   multiline: { minHeight: 84, paddingTop: Spacing.two, textAlignVertical: 'top' },

@@ -34,11 +34,16 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
+      {/* 일정 목록은 홈에 합쳤다. 상세·폼·출석 체크는 이 스택으로 push 해서 쓰므로
+          Screen 자체를 지우면 안 된다 — 탭만 숨긴다. */}
+      <Tabs.Screen name="events" options={{ href: null }} />
+      {/* 시즌 탭은 '구성'(참가 팀 · 명단 · 경기 일정)만 보여준다.
+          순위표와 개인 스탯은 통계 탭에 있다 — 같은 숫자를 두 곳에서 고치지 않는다. */}
       <Tabs.Screen
-        name="events"
+        name="season"
         options={{
-          title: '일정',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+          title: '시즌',
+          tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

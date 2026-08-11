@@ -18,6 +18,7 @@ export default function TeamSettingsScreen() {
 
   const [teamName, setTeamName] = useState('');
   const [fee, setFee] = useState('');
+  const [annualFee, setAnnualFee] = useState('');
   const [requireApproval, setRequireApproval] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -25,6 +26,7 @@ export default function TeamSettingsScreen() {
     void loadSettings().then((s) => {
       setTeamName(s.teamName);
       setFee(String(s.monthlyFeeAmount));
+      setAnnualFee(String(s.annualFeeAmount));
       setRequireApproval(s.requireApproval);
     });
   }, []);
@@ -39,12 +41,18 @@ export default function TeamSettingsScreen() {
       toast('월 회비는 숫자만 입력해 주세요.', 'error');
       return;
     }
+    const annualAmount = annualFee.replace(/[,\s]/g, '');
+    if (!/^\d+$/.test(annualAmount)) {
+      toast('연납 회비는 숫자만 입력해 주세요.', 'error');
+      return;
+    }
 
     setSaving(true);
     try {
       await saveSettings({
         teamName: teamName.trim(),
         monthlyFeeAmount: Number(amount),
+        annualFeeAmount: Number(annualAmount),
         requireApproval,
       });
       toast('설정을 저장했습니다.');
@@ -57,6 +65,7 @@ export default function TeamSettingsScreen() {
   };
 
   const parsedFee = Number(fee.replace(/[,\s]/g, ''));
+  const parsedAnnual = Number(annualFee.replace(/[,\s]/g, ''));
 
   return (
     <View style={styles.screen}>
@@ -99,6 +108,18 @@ export default function TeamSettingsScreen() {
                   Number.isFinite(parsedFee) && parsedFee > 0
                     ? `${formatWon(parsedFee)} · 납부 화면의 기본 금액`
                     : '납부 화면의 기본 금액'
+                }
+              />
+              <Field
+                label="연납 회비"
+                value={annualFee}
+                onChangeText={setAnnualFee}
+                keyboardType="number-pad"
+                placeholder="300000"
+                hint={
+                  Number.isFinite(parsedAnnual) && parsedAnnual > 0
+                    ? `${formatWon(parsedAnnual)} · 연초에 한 번에 낼 때의 할인 금액`
+                    : '연초에 한 번에 낼 때의 할인 금액'
                 }
               />
             </Card>

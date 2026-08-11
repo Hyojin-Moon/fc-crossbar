@@ -5,18 +5,22 @@ import { supabase } from '@/lib/supabase';
 export type AppSettings = {
   teamName: string;
   monthlyFeeAmount: number;
+  /** 연초에 한 번에 낼 때의 할인 금액 (월 회비 × 12 보다 싸다) */
+  annualFeeAmount: number;
   requireApproval: boolean;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
   teamName: 'FC Crossbar',
   monthlyFeeAmount: 30000,
+  annualFeeAmount: 300000,
   requireApproval: false,
 };
 
 const KEYS = {
   teamName: 'team_name',
   monthlyFeeAmount: 'monthly_fee_amount',
+  annualFeeAmount: 'annual_fee_amount',
   requireApproval: 'require_approval',
 } as const;
 
@@ -39,6 +43,7 @@ async function fetchSettings(): Promise<AppSettings> {
   const next: AppSettings = {
     teamName: String(map.get(KEYS.teamName) ?? DEFAULT_SETTINGS.teamName),
     monthlyFeeAmount: Number(map.get(KEYS.monthlyFeeAmount) ?? DEFAULT_SETTINGS.monthlyFeeAmount),
+    annualFeeAmount: Number(map.get(KEYS.annualFeeAmount) ?? DEFAULT_SETTINGS.annualFeeAmount),
     requireApproval: Boolean(map.get(KEYS.requireApproval) ?? DEFAULT_SETTINGS.requireApproval),
   };
   cache = next;
@@ -85,13 +90,14 @@ export function useSettings() {
 
 /**
  * super_admin 전용 (RLS 가 다시 검사한다).
- * 세 값을 한 번의 요청으로 저장하고 갱신을 한 번만 알린다.
+ * 모든 값을 한 번의 요청으로 저장하고 갱신을 한 번만 알린다.
  */
 export async function saveSettings(next: AppSettings) {
   const { error } = await supabase.from('app_settings').upsert(
     [
       { key: KEYS.teamName, value: next.teamName },
       { key: KEYS.monthlyFeeAmount, value: next.monthlyFeeAmount },
+      { key: KEYS.annualFeeAmount, value: next.annualFeeAmount },
       { key: KEYS.requireApproval, value: next.requireApproval },
     ],
     { onConflict: 'key' }

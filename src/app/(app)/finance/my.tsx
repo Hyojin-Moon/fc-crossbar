@@ -9,8 +9,8 @@ import { Card, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeDbError } from '@/lib/errors';
-import { fetchMyPayments, formatWon, PAYMENT_STATUS_LABEL } from '@/lib/finance';
-import type { MembershipPayment, PaymentStatus } from '@/types/database';
+import { fetchMyAnnualPayments, fetchMyPayments, formatWon, PAYMENT_STATUS_LABEL } from '@/lib/finance';
+import type { AnnualPayment, MembershipPayment, PaymentStatus } from '@/types/database';
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
   paid: Colors.accent,
@@ -22,12 +22,18 @@ export default function MyPaymentsScreen() {
   const { profile } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState<MembershipPayment[]>([]);
+  const [annual, setAnnual] = useState<AnnualPayment[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!profile) return;
     try {
-      setRows(await fetchMyPayments(profile.id));
+      const [monthly, yearly] = await Promise.all([
+        fetchMyPayments(profile.id),
+        fetchMyAnnualPayments(profile.id),
+      ]);
+      setRows(monthly);
+      setAnnual(yearly);
     } catch (e) {
       toast(describeDbError(e), 'error');
     } finally {
@@ -41,10 +47,17 @@ export default function MyPaymentsScreen() {
     }, [load])
   );
 
-  const paidTotal = rows
-    .filter((r) => r.status === 'paid')
-    .reduce((sum, r) => sum + r.amount, 0);
-  const unpaidCount = rows.filter((r) => r.status === 'unpaid').length;
+  // 연납한 해의 월별 기록은 합계·미납에서 뺀다. 연납 등록 시 월납을 면제로
+  // 바꾸긴 하지만, 그 전에 남아 있던 기록이 있으면 같은 돈을 두 번 더하게 된다.
+  const annualYears = new Set(annual.map((a) => a.year));
+  const paidTotal =
+    rows
+      .filter((r) => r.status === 'paid' && !annualYears.has(r.year))
+      .reduce((sum, r) => sum + r.amount, 0) +
+    annual.reduce((sum, a) => sum + a.amount, 0);
+  const unpaidCount = rows.filter(
+    (r) => r.status === 'unpaid' && !annualYears.has(r.year)
+  ).length;
 
   return (
     <View style={styles.screen}>
@@ -68,8 +81,37 @@ export default function MyPaymentsScreen() {
             기록 {rows.length}건
             {unpaidCount > 0 ? ` · 미납 ${unpaidCount}건` : ' · 미납 없음'}
           </Text>
+          {annual.length > 0 ? (
+            <Text style={styles.summaryLine}>
+              연납 {annual.map((a) => `${a.year}년`).join(' · ')}
+            </Text>
+          ) : null}
           <Muted>금액과 상태는 운영진이 입력합니다. 틀린 내용이 있으면 운영진에게 알려주세요.</Muted>
         </Card>
+
+        {annual.length > 0 ? (
+          <Card>
+            <SectionTitle>연납 내역</SectionTitle>
+            <Muted>연초에 한 번에 낸 기록입니다. 그 해 월별 내역은 입력하지 않습니다.</Muted>
+            {annual.map((a) => (
+              <View key={a.id} style={styles.row}>
+                <View style={styles.rowMain}>
+                  <Text style={styles.period}>{a.year}년 전체</Text>
+                  <Text style={styles.meta}>
+                    {a.payment_date ? `납부일 ${a.payment_date}` : '납부일 없음'}
+                    {a.memo ? ` · ${a.memo}` : ''}
+                  </Text>
+                </View>
+                <View style={styles.rowRight}>
+                  <Text style={styles.amount}>{formatWon(a.amount)}</Text>
+                  <View style={[styles.badge, { backgroundColor: Colors.navy }]}>
+                    <Text style={styles.badgeText}>연납</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </Card>
+        ) : null}
 
         <Card>
           <SectionTitle>월별 내역</SectionTitle>

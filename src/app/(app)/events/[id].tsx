@@ -20,8 +20,9 @@ import {
 } from '@/lib/events';
 import { describeDbError } from '@/lib/errors';
 import { displayName, useActiveMembers } from '@/lib/members';
+import { fetchSeasonSquads } from '@/lib/seasons';
 import { MATCH_TYPE_LABEL } from '@/lib/venues';
-import { useVoteOptions } from '@/lib/vote-options';
+import { optionsForEvent, useVoteOptions } from '@/lib/vote-options';
 import { ATTENDANCE_LABEL, COUNTS_AS_ATTENDED } from '@/lib/attendance';
 
 export default function EventDetailScreen() {
@@ -35,11 +36,20 @@ export default function EventDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [teamName, setTeamName] = useState<Map<string, string>>(new Map());
 
   const load = useCallback(async () => {
     if (!id) return;
     try {
-      setEvent(await fetchEvent(id));
+      const next = await fetchEvent(id);
+      setEvent(next);
+      // 시즌 경기는 팀 이름을 함께 보여줘야 스코어를 읽을 수 있다
+      if (next?.season_id) {
+        const squads = await fetchSeasonSquads(next.season_id);
+        setTeamName(new Map(squads.map((s) => [s.teamId, s.teamName])));
+      } else {
+        setTeamName(new Map());
+      }
     } catch (e) {
       toast(describeDbError(e), 'error');
     } finally {
@@ -77,9 +87,7 @@ export default function EventDetailScreen() {
   for (const record of recordedAttendance) attendanceCounts[record.status] += 1;
 
   const groups = [
-    ...options
-      .filter((o) => event.allowed_votes.includes(o.code))
-      .map((o) => ({
+    ...optionsForEvent(event, options).map((o) => ({
         key: o.code,
         label: o.label,
         color: VoteColors[o.code] ?? Colors.navy,
@@ -159,6 +167,25 @@ export default function EventDetailScreen() {
             memberIds={memberIds}
             onChanged={load}
           />
+        ) : null}
+
+        {event.match_type === 'season' && event.home_team_id ? (
+          <Card>
+            <SectionTitle>시즌 경기</SectionTitle>
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreTeam} numberOfLines={1}>
+                {teamName.get(event.home_team_id) ?? '홈'}
+              </Text>
+              <Text style={styles.scoreValue}>
+                {event.home_score === null
+                  ? '결과 입력 전'
+                  : `${event.home_score} : ${event.away_score}`}
+              </Text>
+              <Text style={[styles.scoreTeam, styles.scoreTeamRight]} numberOfLines={1}>
+                {teamName.get(event.away_team_id ?? '') ?? '원정'}
+              </Text>
+            </View>
+          </Card>
         ) : null}
 
         {event.venue_address || event.map_url || event.description ? (
@@ -242,6 +269,12 @@ export default function EventDetailScreen() {
               onPress={() => router.push(`/(app)/events/attendance?id=${event.id}`)}
             />
             <AppButton
+              label="경기 기록 (스코어 · 스탯)"
+              variant="outline"
+              disabled={busy}
+              onPress={() => router.push(`/(app)/events/result?id=${event.id}`)}
+            />
+            <AppButton
               label="일정 수정"
               variant="outline"
               disabled={busy}
@@ -307,6 +340,10 @@ const styles = StyleSheet.create({
   groupCount: { fontSize: 15, fontWeight: '800', color: Colors.navy },
   nameList: { paddingBottom: Spacing.two, paddingLeft: Spacing.four, gap: 2 },
   name: { fontSize: 14, color: Colors.textSecondary },
+  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  scoreTeam: { flex: 1, minWidth: 0, fontSize: 14, fontWeight: '700', color: Colors.text },
+  scoreTeamRight: { textAlign: 'right' },
+  scoreValue: { fontSize: 18, fontWeight: '800', color: Colors.navy },
   attendanceLine: { fontSize: 14, color: Colors.text },
   attendanceTotal: { fontSize: 15, fontWeight: '800', color: Colors.navy },
   infoRowLast: {},

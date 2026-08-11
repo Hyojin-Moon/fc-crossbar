@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Expense, MembershipPayment, PaymentStatus } from '@/types/database';
+import type { AnnualPayment, Expense, MembershipPayment, PaymentStatus } from '@/types/database';
 
 export const EXPENSE_CATEGORIES = ['구장비', '장비', '음료/간식', '대회 참가비', '기타'] as const;
 
@@ -143,6 +143,84 @@ export async function savePayment(input: PaymentInput, createdBy: string) {
   const { error } = await supabase
     .from('membership_payments')
     .upsert({ ...input, created_by: createdBy }, { onConflict: 'member_id,year,month' });
+  if (error) throw error;
+}
+
+// --- 연납 ------------------------------------------------------------------
+//
+// 월납(membership_payments)과 별개 테이블이다. 한 해를 통째로 낸 사람은
+// 그 해 월별 토글을 건드리지 않는다 — get_finance_summary() 가 연납자를
+// 미납 집계에서 빼고 수입에는 연납 금액을 더하기 때문에, 월납까지 같이
+// 찍으면 같은 돈을 두 번 세게 된다.
+
+export async function fetchAnnualPayments(year: number): Promise<AnnualPayment[]> {
+  const { data, error } = await supabase
+    .from('membership_annual_payments')
+    .select('*')
+    .eq('year', year);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchMyAnnualPayments(memberId: string): Promise<AnnualPayment[]> {
+  const { data, error } = await supabase
+    .from('membership_annual_payments')
+    .select('*')
+    .eq('member_id', memberId)
+    .order('year', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function saveAnnualPayment(
+  input: { member_id: string; year: number; amount: number; payment_date: string | null; memo: string | null },
+  createdBy: string
+) {
+  const { error } = await supabase
+    .from('membership_annual_payments')
+    .upsert({ ...input, created_by: createdBy }, { onConflict: 'member_id,year' });
+  if (error) throw error;
+}
+
+/**
+ * 그 해에 이미 '납부'로 찍힌 월납을 면제로 바꾼다.
+ *
+ * ★ 연납 등록과 반드시 같이 해야 한다. get_finance_summary() 는 수입에
+ * '모든 paid 월납 + 모든 연납' 을 더하므로, 이미 낸 달을 그대로 두면
+ * 같은 돈이 두 번 수입으로 잡힌다. 삭제가 아니라 면제로 바꿔서 기록은 남긴다.
+ *
+ * @returns 면제로 바꾼 월 수
+ */
+export async function exemptMonthsForAnnual(memberId: string, year: number): Promise<number> {
+  const { data, error } = await supabase
+    .from('membership_payments')
+    .update({ status: 'exempt', payment_date: null, memo: `${year}년 연납` })
+    .eq('member_id', memberId)
+    .eq('year', year)
+    .eq('status', 'paid')
+    .select('id');
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
+/** 연납 등록 전에 몇 달이 이미 납부로 찍혀 있는지 — 확인 문구에 쓴다. */
+export async function countPaidMonths(memberId: string, year: number): Promise<number> {
+  const { count, error } = await supabase
+    .from('membership_payments')
+    .select('id', { count: 'exact', head: true })
+    .eq('member_id', memberId)
+    .eq('year', year)
+    .eq('status', 'paid');
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function deleteAnnualPayment(memberId: string, year: number) {
+  const { error } = await supabase
+    .from('membership_annual_payments')
+    .delete()
+    .eq('member_id', memberId)
+    .eq('year', year);
   if (error) throw error;
 }
 

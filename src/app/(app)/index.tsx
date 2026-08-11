@@ -8,6 +8,7 @@ import { VoteCard } from '@/components/vote-card';
 import { Colors, Spacing } from '@/constants/theme';
 import { formatEventDate, formatTimeRange, relativeDayLabel } from '@/lib/dates';
 import { useAuth } from '@/lib/auth-context';
+import { describeDbError } from '@/lib/errors';
 import {
   fetchPastEvents,
   fetchUpcomingEvents,
@@ -38,7 +39,7 @@ export default function HomeScreen() {
       setPast(recent);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(describeDbError(e));
     } finally {
       setLoading(false);
       setRefreshing(false);

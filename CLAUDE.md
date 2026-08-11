@@ -589,6 +589,8 @@ gh release create v1.0.0 ./fc-crossbar-v1.0.0.apk \
 | 가입 시 "서버의 이메일 인증 설정이 켜져 있어..." | Authentication > Email > **Confirm email** 을 끈다 |
 | `column profiles.login_id does not exist` | `0004_login_id.sql` 미실행 |
 | SQL Editor 에서 `42601 syntax error at or near "update"` | `Limit 100 rows` 를 `No limit` 으로 바꾼다 |
+| `PGRST200` / `Could not find a relationship` | 클라이언트가 참조하는 테이블이 DB 에 없다. `supabase/migrations` 의 최신 SQL 미실행. **앱 코드와 마이그레이션은 항상 같이 나가야 한다** |
+| 에러 자리에 `[object Object]` | Supabase 에러는 `Error` 인스턴스가 아니다. `String(e)` 대신 `describeDbError(e)` 를 쓸 것 |
 | 라우트가 중복됐다는 개발 서버 에러 | `foo.tsx` 와 `foo/` 디렉터리는 공존할 수 없다. `tsc` 는 못 잡는다 |
 | 투표 버튼을 눌렀는데 `row-level security policy` 토스트 | 투표 기간이 아니다. `getVoteWindow()` 가 `open` 인지 확인 |
 | 쿼리가 빈 배열만 반환 | RLS 차단. `0002_rls.sql` 실행 여부와 본인 `status = 'active'` 확인 |

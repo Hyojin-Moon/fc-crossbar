@@ -15,6 +15,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Card, Muted, SectionTitle } from '@/components/ui';
 import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
+import { describeDbError } from '@/lib/errors';
 import { formatEventDate, formatTimeRange, relativeDayLabel } from '@/lib/dates';
 import {
   fetchPastEvents,
@@ -46,7 +47,7 @@ export default function EventListScreen() {
       setEvents(tab === 'upcoming' ? await fetchUpcomingEvents() : await fetchPastEvents(50));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(describeDbError(e));
     } finally {
       setLoading(false);
       setRefreshing(false);

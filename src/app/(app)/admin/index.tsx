@@ -28,6 +28,12 @@ export default function AdminMenuScreen() {
             onPress={() => router.push('/(app)/admin/members')}
           />
           <MenuRow
+            icon="shirt"
+            title="팀 관리"
+            subtitle="시즌과 무관하게 팀을 만들고 기본 명단을 지정한다"
+            onPress={() => router.push('/(app)/admin/teams')}
+          />
+          <MenuRow
             icon="location"
             title="경기장 관리"
             subtitle="미리 등록해 두면 일정 만들 때 골라 쓴다"

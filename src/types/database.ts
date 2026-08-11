@@ -87,6 +87,36 @@ export type EventAttendance = {
   updated_at: string;
 };
 
+export type Team = {
+  id: string;
+  name: string;
+  color: string | null;
+  memo: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** get_teams_with_base_roster() 결과. member_count 는 기본 명단 인원수. */
+export type TeamWithRoster = {
+  id: string;
+  name: string;
+  color: string | null;
+  memo: string | null;
+  sort_order: number;
+  is_active: boolean;
+  member_count: number;
+};
+
+/** 시즌과 무관한 기본 명단. 시즌별 명단(team_members)과 다른 테이블이다. */
+export type TeamBaseMember = {
+  id: string;
+  team_id: string;
+  member_id: string;
+  created_at: string;
+};
+
 export type VoteOption = {
   code: VoteCode;
   label: string;
@@ -171,6 +201,11 @@ export type Database = {
         Pick<EventVote, 'event_id' | 'member_id' | 'vote'> & Partial<EventVote>
       >;
       vote_options: Table<VoteOption>;
+      teams: Table<Team, Pick<Team, 'name'> & Partial<Team>>;
+      team_base_members: Table<
+        TeamBaseMember,
+        Pick<TeamBaseMember, 'team_id' | 'member_id'> & Partial<TeamBaseMember>
+      >;
       venues: Table<Venue, Pick<Venue, 'name'> & Partial<Venue>>;
       event_attendance: Table<
         EventAttendance,
@@ -192,6 +227,10 @@ export type Database = {
       get_attendance_stats: {
         Args: { from_date?: string | null; to_date?: string | null };
         Returns: AttendanceStat[];
+      };
+      get_teams_with_base_roster: {
+        Args: Record<string, never>;
+        Returns: TeamWithRoster[];
       };
       get_finance_summary: {
         Args: { p_year?: number | null; p_month?: number | null };

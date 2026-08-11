@@ -49,7 +49,8 @@
     "typecheck": "tsc --noEmit",
     "build:apk": "eas build -p android --profile preview",
     "build:apk:prod": "eas build -p android --profile production",
-    "build:apk:local": "eas build -p android --profile preview --local"
+    "build:apk:local": "eas build -p android --profile preview --local",
+    "build:web": "expo export -p web && node scripts/postexport-web.mjs"
   },
   "private": true
 }

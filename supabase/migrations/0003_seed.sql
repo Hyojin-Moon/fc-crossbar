@@ -93,11 +93,7 @@ begin
               from public.events where event_date < current_date loop
       -- 미투표도 섞이도록 일부는 건너뛴다
       continue when (idx + ev.rn) % 7 = 0;
-      vote_code := case (idx + ev.rn) % 5
-                     when 0 then 'absent'
-                     when 1 then 'maybe'
-                     else 'attend'
-                   end;
+      vote_code := case when (idx + ev.rn) % 5 <= 1 then 'absent' else 'attend' end;
       insert into public.event_votes (event_id, member_id, vote)
       values (ev.id, member_row.id, vote_code)
       on conflict (event_id, member_id) do nothing;

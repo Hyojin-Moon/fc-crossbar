@@ -95,8 +95,6 @@ begin
       -- null 이면 미투표로 남긴다.
       if ((ev.rn * 13 + idx * 7) % 10) < (idx + 1) then
         vote_code := 'attend';
-      elsif ((ev.rn + idx) % 4) = 0 then
-        vote_code := 'maybe';
       elsif ((ev.rn * 3 + idx) % 7) = 0 then
         vote_code := null;
       else

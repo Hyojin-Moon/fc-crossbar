@@ -23,7 +23,7 @@ create table if not exists public.vote_options (
 insert into public.vote_options (code, label, counts_as_attendance, sort_order, is_active) values
   ('attend',      '참석',     true,  1, true),
   ('absent',      '불참',     false, 2, true),
-  ('maybe',       '미정',     false, 3, true),
+  ('maybe',       '미정',     false, 3, false),
   -- 아래는 미리 정의해 둔 확장용 선택지. is_active=false 라 기본 노출되지 않음.
   ('late',        '지각',     true,  4, false),
   ('early_leave', '조기귀가', true,  5, false),
@@ -75,7 +75,7 @@ create table if not exists public.events (
   vote_deadline            timestamptz,
   max_attendees            integer,
   -- 이 일정에서 사용할 투표 선택지. vote_options.code 의 부분집합.
-  allowed_votes            text[] not null default array['attend', 'absent', 'maybe'],
+  allowed_votes            text[] not null default array['attend', 'absent'],
   -- 일반 회원에게 참석자 명단을 공개할지 여부
   attendee_list_visible    boolean not null default true,
   -- 참석률 통계 계산에 포함할지 여부

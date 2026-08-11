@@ -16,7 +16,6 @@ let inflight: Promise<VoteOption[]> | null = null;
 const FALLBACK: VoteOption[] = [
   { code: 'attend', label: '참석', counts_as_attendance: true, sort_order: 1, is_active: true },
   { code: 'absent', label: '불참', counts_as_attendance: false, sort_order: 2, is_active: true },
-  { code: 'maybe', label: '미정', counts_as_attendance: false, sort_order: 3, is_active: true },
 ];
 
 async function fetchVoteOptions(): Promise<VoteOption[]> {
@@ -55,11 +54,16 @@ export function useVoteOptions() {
   return options;
 }
 
+/**
+ * 켜진 선택지는 `is_active` 와 `allowed_votes` 를 모두 만족해야 한다.
+ * is_active 도 봐야 하는 이유: 선택지를 끌 때(0015 의 '미정') 지난 일정의
+ * allowed_votes 에 코드가 남아 있으면 그 일정만 없어진 버튼이 뜬다.
+ */
 export function optionsForEvent(event: TeamEvent, all: VoteOption[]): VoteOption[] {
   const byCode = new Map(all.map((o) => [o.code, o]));
   return event.allowed_votes
     .map((code) => byCode.get(code))
-    .filter((o): o is VoteOption => Boolean(o));
+    .filter((o): o is VoteOption => Boolean(o?.is_active));
 }
 
 export function labelOf(code: VoteCode | null, all: VoteOption[]): string {

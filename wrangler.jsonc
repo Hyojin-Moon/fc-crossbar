@@ -1,0 +1,18 @@
+{
+  // 아이폰 팀원용 웹 배포 (Cloudflare Workers 정적 자산).
+  //
+  // 대시보드 드래그 업로드를 쓰지 않는 이유:
+  //   SPA 라서 /stats 같은 하위 경로에서 새로고침하면 그 파일을 찾다가 404 가 난다.
+  //   _redirects 의 200 재작성은 Cloudflare 문서에 "지원 안 함"으로 표기되어 있고,
+  //   확실한 방법은 not_found_handling 뿐인데 이건 이 설정 파일로만 지정할 수 있다.
+  //
+  // 스크립트(main) 없이 정적 자산만 배포한다.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fc-crossbar",
+  "compatibility_date": "2026-08-11",
+  "assets": {
+    "directory": "./dist",
+    // 없는 경로는 index.html 을 200 으로 돌려준다 = SPA 폴백
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -38,7 +38,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "wrangler": "^4.120.1"
   },
   "scripts": {
     "start": "expo start",
@@ -50,7 +51,8 @@
     "build:apk": "eas build -p android --profile preview",
     "build:apk:prod": "eas build -p android --profile production",
     "build:apk:local": "eas build -p android --profile preview --local",
-    "build:web": "expo export -p web && node scripts/postexport-web.mjs"
+    "build:web": "expo export -p web && node scripts/postexport-web.mjs",
+    "deploy:web": "npm run build:web && wrangler deploy"
   },
   "private": true
 }

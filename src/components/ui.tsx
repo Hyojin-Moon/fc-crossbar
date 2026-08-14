@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ReactElement, ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  type RefreshControlProps,
   type StyleProp,
   type TextInputProps,
   type ViewProps,
@@ -114,12 +115,17 @@ export function Screen({
 export function ScreenScroll({
   children,
   fullWidth,
+  refreshControl,
 }: {
   children: ReactNode;
   fullWidth?: boolean;
+  refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   return (
-    <ScrollView contentContainerStyle={styles.scrollOuter} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.scrollOuter}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}>
       <View style={[styles.scrollInner, !fullWidth && styles.scrollInnerBounded]}>
         {children}
       </View>

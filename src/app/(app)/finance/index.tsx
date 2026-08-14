@@ -55,7 +55,17 @@ export default function FinanceDashboardScreen() {
   return (
     <Screen>
       <ScreenHeader title="회비" subtitle={`${year}년 ${month}월`} />
-      <ScreenScroll>
+      <ScreenScroll
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              void load();
+            }}
+            tintColor={Colors.navy}
+          />
+        }>
         {loading ? (
           <InlineLoader />
         ) : error ? (

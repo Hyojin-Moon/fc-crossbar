@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, SectionTitle } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { AppButton, Card, Field, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
@@ -64,9 +64,9 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader title="내 정보" subtitle={loginId} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenScroll>
         <Card>
           <SectionTitle>프로필</SectionTitle>
           <Field label="이름" value={name} onChangeText={setName} hint="실명으로 입력해 주세요." />
@@ -95,15 +95,13 @@ export default function ProfileScreen() {
             onPress={() => void onSignOut()}
           />
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowLabel: { color: Colors.textSecondary, fontSize: 14 },
-  rowValue: { color: Colors.text, fontSize: 14, fontWeight: '600' },
+  rowLabel: { color: Colors.textSecondary, ...Typography.body },
+  rowValue: { color: Colors.text, ...Typography.body, fontWeight: Weight.semibold },
 });

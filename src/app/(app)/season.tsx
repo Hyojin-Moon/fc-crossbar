@@ -1,19 +1,22 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
-import { AppButton, Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  ChipRow,
+  EmptyState,
+  InlineLoader,
+  ListRow,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatEventDate, formatTime } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -101,7 +104,7 @@ export default function SeasonScreen() {
   const assigned = squads.reduce((sum, s) => sum + s.members.length, 0);
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="시즌"
         subtitle={season ? `${season.name} · ${SEASON_STATUS_LABEL[season.status]}` : '시즌 없음'}
@@ -118,27 +121,16 @@ export default function SeasonScreen() {
       />
 
       {seasons.length > 1 ? (
-        <View style={styles.filterBar}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chips}>
-            {seasons.map((s) => (
-              <Pressable
-                key={s.id}
-                onPress={() => selectSeason(s.id)}
-                style={[styles.chip, s.id === seasonId && styles.chipActive]}>
-                <Text style={[styles.chipText, s.id === seasonId && styles.chipTextActive]}>
-                  {s.name}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+        <ChipRow
+          items={seasons.map((s) => ({ value: s.id as string | null, label: s.name }))}
+          value={seasonId}
+          onChange={(id) => id && selectSeason(id)}
+          layout="scroll"
+          bar
+        />
       ) : null}
 
-      <ScrollView
-        contentContainerStyle={styles.content}
+      <ScreenScroll
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -150,7 +142,7 @@ export default function SeasonScreen() {
           />
         }>
         {loading ? (
-          <ActivityIndicator color={Colors.navy} style={styles.loader} />
+          <InlineLoader />
         ) : error ? (
           <Card>
             <SectionTitle>불러오지 못했습니다</SectionTitle>
@@ -191,27 +183,28 @@ export default function SeasonScreen() {
             <Card>
               <SectionTitle>참가 팀 · 명단</SectionTitle>
               {squads.length === 0 ? (
-                <Muted>
-                  {isAdmin
-                    ? '참가 팀이 없습니다. 우측 상단 설정에서 팀을 추가해 주세요.'
-                    : '아직 참가 팀이 지정되지 않았습니다.'}
-                </Muted>
+                <EmptyState
+                  message={
+                    isAdmin
+                      ? '참가 팀이 없습니다. 우측 상단 설정에서 팀을 추가해 주세요.'
+                      : '아직 참가 팀이 지정되지 않았습니다.'
+                  }
+                />
               ) : (
-                squads.map((squad) => (
-                  <View key={squad.seasonTeamId} style={styles.squad}>
-                    <View style={styles.squadHead}>
-                      <View
-                        style={[styles.swatch, { backgroundColor: squad.color ?? Colors.navySoft }]}
-                      />
-                      <Text style={styles.squadName}>{squad.teamName}</Text>
-                      <Text style={styles.squadCount}>{squad.members.length}명</Text>
-                    </View>
+                squads.map((squad, index) => (
+                  <Fragment key={squad.seasonTeamId}>
+                    <ListRow
+                      first={index === 0}
+                      dotColor={squad.color ?? Colors.navySoft}
+                      title={squad.teamName}
+                      trailing={`${squad.members.length}명`}
+                    />
                     <Text style={styles.squadMembers}>
                       {squad.members.length === 0
                         ? '배정된 회원이 없습니다.'
                         : squad.members.map((m) => m.name).join(' · ')}
                     </Text>
-                  </View>
+                  </Fragment>
                 ))
               )}
               {isAdmin && squads.length > 0 ? (
@@ -226,55 +219,53 @@ export default function SeasonScreen() {
             <Card>
               <SectionTitle>경기 일정 {matches.length}</SectionTitle>
               {matches.length === 0 ? (
-                <Muted>
-                  {isAdmin
-                    ? '홈 화면 ‘새 일정’에서 경기 유형을 시즌경기로 만들면 여기에 쌓입니다.'
-                    : '등록된 시즌 경기가 없습니다.'}
-                </Muted>
+                <EmptyState
+                  message={
+                    isAdmin
+                      ? '홈 화면 ‘새 일정’에서 경기 유형을 시즌경기로 만들면 여기에 쌓입니다.'
+                      : '등록된 시즌 경기가 없습니다.'
+                  }
+                />
               ) : (
-                matches.map((m) => (
-                  <Pressable
+                matches.map((m, index) => (
+                  <ListRow
                     key={m.id}
+                    first={index === 0}
                     onPress={() => router.push(`/(app)/events/${m.id}`)}
-                    style={({ pressed }) => [styles.matchRow, pressed && { opacity: 0.7 }]}>
-                    <View style={styles.matchDateBox}>
-                      <Text style={styles.matchDate}>{formatEventDate(m.event_date)}</Text>
-                      {m.start_time ? (
-                        <Text style={styles.matchTime}>{formatTime(m.start_time)}</Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.matchMain}>
-                      <Text style={styles.matchTeams} numberOfLines={1}>
-                        {teamName.get(m.home_team_id ?? '') ?? '?'} vs{' '}
-                        {teamName.get(m.away_team_id ?? '') ?? '?'}
+                    leading={
+                      <View style={styles.matchDateBox}>
+                        <Text style={styles.matchDate}>{formatEventDate(m.event_date)}</Text>
+                        {m.start_time ? (
+                          <Text style={styles.matchTime}>{formatTime(m.start_time)}</Text>
+                        ) : null}
+                      </View>
+                    }
+                    title={`${teamName.get(m.home_team_id ?? '') ?? '?'} vs ${
+                      teamName.get(m.away_team_id ?? '') ?? '?'
+                    }`}
+                    meta={m.venue_name ?? undefined}
+                    trailing={
+                      <Text
+                        style={[styles.matchScore, m.home_score === null && styles.matchScoreEmpty]}>
+                        {m.status === 'cancelled'
+                          ? '취소'
+                          : m.home_score === null
+                            ? '예정'
+                            : `${m.home_score} : ${m.away_score}`}
                       </Text>
-                      {m.venue_name ? (
-                        <Text style={styles.matchVenue} numberOfLines={1}>
-                          {m.venue_name}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <Text
-                      style={[styles.matchScore, m.home_score === null && styles.matchScoreEmpty]}>
-                      {m.status === 'cancelled'
-                        ? '취소'
-                        : m.home_score === null
-                          ? '예정'
-                          : `${m.home_score} : ${m.away_score}`}
-                    </Text>
-                  </Pressable>
+                    }
+                  />
                 ))
               )}
             </Card>
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
   headerButton: {
     width: 34,
     height: 34,
@@ -283,54 +274,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBar: {
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingVertical: Spacing.two,
-  },
-  chips: { paddingHorizontal: Spacing.three, gap: Spacing.two },
-  chip: {
-    paddingVertical: 7,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextActive: { color: Colors.textOnNavy },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginTop: Spacing.five },
-  memo: { fontSize: 13, color: Colors.textSecondary },
-  counts: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  link: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  squad: { paddingTop: Spacing.two, borderTopWidth: 1, borderTopColor: Colors.border, gap: 4 },
-  squadHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  swatch: { width: 11, height: 11, borderRadius: 3 },
-  squadName: { flex: 1, fontSize: 14, fontWeight: '800', color: Colors.text },
-  squadCount: { fontSize: 12, fontWeight: '700', color: Colors.navy },
-  squadMembers: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
-  matchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
+  memo: { ...Typography.body, color: Colors.textSecondary },
+  counts: { ...Typography.body, fontWeight: Weight.bold, color: Colors.text },
+  link: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
+  squadMembers: { ...Typography.body, color: Colors.textSecondary, lineHeight: 20 },
   matchDateBox: { width: 62 },
-  matchDate: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  matchTime: { fontSize: 11, color: Colors.muted },
-  matchMain: { flex: 1, minWidth: 0, gap: 2 },
-  matchTeams: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  matchVenue: { fontSize: 12, color: Colors.textSecondary },
+  matchDate: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.textSecondary },
+  matchTime: { ...Typography.caption, color: Colors.muted },
   matchScore: {
-    fontSize: 15,
-    fontWeight: '800',
+    ...Typography.bodyLarge,
+    fontWeight: Weight.bold,
     color: Colors.navy,
     fontVariant: ['tabular-nums'],
   },
-  matchScoreEmpty: { fontSize: 12, fontWeight: '600', color: Colors.muted },
+  matchScoreEmpty: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.muted },
 });

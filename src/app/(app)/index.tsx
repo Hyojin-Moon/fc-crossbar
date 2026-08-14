@@ -1,20 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
-import { Card, Muted, SectionTitle } from '@/components/ui';
+import { Card, InlineLoader, Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
 import { VoteCard } from '@/components/vote-card';
-import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatEventDate, formatTimeRange, relativeDayLabel } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -71,7 +63,7 @@ export default function HomeScreen() {
   const list = tab === 'upcoming' ? upcoming : past;
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title={settings.teamName}
         subtitle={`${profile?.name ?? ''}님, 반갑습니다`}
@@ -88,8 +80,7 @@ export default function HomeScreen() {
         }
       />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
+      <ScreenScroll
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -101,7 +92,7 @@ export default function HomeScreen() {
           />
         }>
         {loading ? (
-          <ActivityIndicator color={Colors.navy} style={styles.loader} />
+          <InlineLoader />
         ) : error ? (
           <Card>
             <SectionTitle>불러오지 못했습니다</SectionTitle>
@@ -219,25 +210,22 @@ export default function HomeScreen() {
             )}
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: Spacing.half,
     backgroundColor: Colors.background,
-    paddingVertical: 6,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.sm,
   },
-  addLabel: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginTop: Spacing.five },
+  addLabel: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
   tabs: {
     flexDirection: 'row',
     backgroundColor: Colors.background,
@@ -246,10 +234,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     overflow: 'hidden',
   },
-  tab: { flex: 1, paddingVertical: Spacing.two + 2, alignItems: 'center' },
+  tab: { flex: 1, paddingVertical: Spacing.two, alignItems: 'center' },
   tabActive: { backgroundColor: Colors.navy },
-  tabText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
-  tabTextActive: { color: Colors.textOnNavy, fontWeight: '800' },
+  tabText: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
+  tabTextActive: { color: Colors.textOnNavy, fontWeight: Weight.bold },
   item: {
     backgroundColor: Colors.background,
     borderWidth: 1,
@@ -259,13 +247,13 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   itemTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  itemTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: Colors.text },
-  itemDay: { fontSize: 12, fontWeight: '700', color: Colors.navy },
-  itemMeta: { fontSize: 13, color: Colors.textSecondary },
+  itemTitle: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
+  itemDay: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.navy },
+  itemMeta: { ...Typography.body, color: Colors.textSecondary },
   itemBottom: { gap: Spacing.one, marginTop: Spacing.one },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  chipText: { fontSize: 12, color: Colors.textSecondary },
-  status: { fontSize: 12, fontWeight: '700', color: Colors.muted },
+  chipText: { ...Typography.caption, color: Colors.textSecondary },
+  status: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.textSecondary },
 });

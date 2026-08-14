@@ -1,12 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Card, InlineLoader, Muted, SectionTitle, Screen, ScreenScroll, SegmentedControl } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { todayLocalISO } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -32,6 +32,11 @@ const STATUS_COLOR: Record<PaymentStatus, string> = {
   unpaid: Colors.danger,
   exempt: Colors.muted,
 };
+const STATUS_OPTIONS = STATUSES.map((s) => ({
+  value: s,
+  label: PAYMENT_STATUS_LABEL[s],
+  color: STATUS_COLOR[s],
+}));
 
 export default function PaymentsScreen() {
   const { profile, isAdmin } = useAuth();
@@ -219,18 +224,11 @@ export default function PaymentsScreen() {
     .reduce((sum, a) => sum + a.amount, 0);
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="회비 납부"
         subtitle={`월 ${formatWon(settings.monthlyFeeAmount)} 기준`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <View style={styles.monthBar}>
@@ -245,7 +243,7 @@ export default function PaymentsScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScreenScroll>
         <Card>
           <SectionTitle>{formatWon(collected)} 수납</SectionTitle>
           <Text style={styles.summaryLine}>
@@ -264,7 +262,7 @@ export default function PaymentsScreen() {
           <SectionTitle>회원별</SectionTitle>
           <Muted>버튼을 누르면 바로 저장됩니다.</Muted>
           {loading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader spacing="vertical" />
           ) : (
             members.map((member) => {
               const payment = byMember.get(member.id);
@@ -302,37 +300,13 @@ export default function PaymentsScreen() {
                     </Text>
                   ) : null}
 
-                  <View style={[styles.statusRow, annualPaid && styles.statusRowMuted]}>
-                    {STATUSES.map((status) => {
-                      const selected = payment?.status === status;
-                      const color = STATUS_COLOR[status];
-                      return (
-                        <Pressable
-                          key={status}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected }}
-                          onPress={() => void setStatus(member.id, status)}
-                          // 연납자에게 월납까지 찍으면 같은 돈이 두 번 수입으로 잡힌다
-                          disabled={pendingId !== null || Boolean(annualPaid)}
-                          style={({ pressed }) => [
-                            styles.statusButton,
-                            selected
-                              ? { backgroundColor: color, borderColor: color }
-                              : { borderColor: color },
-                            pendingId !== null && { opacity: 0.5 },
-                            pressed && { opacity: 0.7 },
-                          ]}>
-                          <Text
-                            style={[
-                              styles.statusText,
-                              { color: selected ? '#FFFFFF' : color },
-                            ]}>
-                            {PAYMENT_STATUS_LABEL[status]}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
+                  <SegmentedControl
+                    options={STATUS_OPTIONS}
+                    value={payment?.status ?? null}
+                    disabled={pendingId !== null || Boolean(annualPaid)}
+                    dimmed={Boolean(annualPaid)}
+                    onChange={(status) => void setStatus(member.id, status)}
+                  />
                   {payment?.payment_date ? (
                     <Text style={styles.dateLine}>납부일 {payment.payment_date}</Text>
                   ) : null}
@@ -341,21 +315,12 @@ export default function PaymentsScreen() {
             })
           )}
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   monthBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,41 +332,27 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   monthArrow: { padding: Spacing.two },
-  monthLabel: { fontSize: 16, fontWeight: '800', color: Colors.text, minWidth: 120, textAlign: 'center' },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginVertical: Spacing.four },
-  summaryLine: { fontSize: 13, color: Colors.textSecondary },
+  monthLabel: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text, minWidth: 120, textAlign: 'center' },
+  summaryLine: { ...Typography.body, color: Colors.textSecondary },
   row: {
-    paddingTop: Spacing.two + 2,
+    paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  name: { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.text },
-  amount: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
+  name: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
+  amount: { ...Typography.body, fontWeight: Weight.bold, color: Colors.textSecondary },
   annualButton: {
-    paddingVertical: 5,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.two,
-    borderRadius: 999,
+    borderRadius: Radius.full,
     borderWidth: 1,
     borderColor: Colors.navy,
     backgroundColor: Colors.background,
   },
   annualButtonOn: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  annualText: { fontSize: 11, fontWeight: '700', color: Colors.navy },
+  annualText: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.navy },
   annualTextOn: { color: Colors.textOnNavy },
-  statusRow: { flexDirection: 'row', gap: Spacing.two },
-  statusRowMuted: { opacity: 0.4 },
-  statusButton: {
-    flex: 1,
-    minHeight: 42,
-    borderRadius: Radius.sm,
-    borderWidth: 1.5,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusText: { fontSize: 14, fontWeight: '700' },
-  dateLine: { fontSize: 11, color: Colors.muted },
+  dateLine: { ...Typography.caption, color: Colors.textSecondary },
 });

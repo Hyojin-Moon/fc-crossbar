@@ -1,20 +1,21 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, FullScreenLoader, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  ChipRow,
+  Field,
+  FullScreenLoader,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { todayLocalISO } from '@/lib/dates';
@@ -28,6 +29,8 @@ import {
   updateExpense,
   type ExpenseInput,
 } from '@/lib/finance';
+
+const CATEGORY_ITEMS = EXPENSE_CATEGORIES.map((c) => ({ value: c as string, label: c }));
 
 export default function ExpenseFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -142,30 +145,17 @@ export default function ExpenseFormScreen() {
   const parsedAmount = Number(form.amount.replace(/[,\s]/g, ''));
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader title={isEdit ? '지출 수정' : '지출 등록'} subtitle="관리자 전용" />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScreenScroll>
           <Card>
             <SectionTitle>내용</SectionTitle>
             <DateTimeInput label="날짜" mode="date" value={form.date} onChange={set('date')} />
 
             <View style={styles.field}>
               <Text style={styles.label}>카테고리</Text>
-              <View style={styles.chips}>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <Pressable
-                    key={c}
-                    onPress={() => set('category')(c)}
-                    style={[styles.chip, form.category === c && styles.chipActive]}>
-                    <Text style={[styles.chipText, form.category === c && styles.chipTextActive]}>
-                      {c}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <ChipRow items={CATEGORY_ITEMS} value={form.category} onChange={set('category')} layout="wrap" />
             </View>
 
             <Field
@@ -201,28 +191,14 @@ export default function ExpenseFormScreen() {
             />
           ) : null}
           <AppButton label="취소" variant="ghost" onPress={() => router.back()} />
-        </ScrollView>
+        </ScreenScroll>
       </KeyboardAvoidingView>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
   flex: { flex: 1 },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   field: { gap: Spacing.one },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextActive: { color: Colors.textOnNavy },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
 });

@@ -1,12 +1,11 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Card, EmptyState, InlineLoader, ListRow, Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeDbError } from '@/lib/errors';
 import { fetchMyAnnualPayments, fetchMyPayments, formatWon, PAYMENT_STATUS_LABEL } from '@/lib/finance';
@@ -60,21 +59,10 @@ export default function MyPaymentsScreen() {
   ).length;
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        title="내 회비"
-        subtitle="읽기 전용"
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
-      />
+    <Screen>
+      <ScreenHeader title="내 회비" subtitle="읽기 전용" onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScreenScroll>
         <Card>
           <SectionTitle>납부 합계 {formatWon(paidTotal)}</SectionTitle>
           <Text style={styles.summaryLine}>
@@ -93,22 +81,23 @@ export default function MyPaymentsScreen() {
           <Card>
             <SectionTitle>연납 내역</SectionTitle>
             <Muted>연초에 한 번에 낸 기록입니다. 그 해 월별 내역은 입력하지 않습니다.</Muted>
-            {annual.map((a) => (
-              <View key={a.id} style={styles.row}>
-                <View style={styles.rowMain}>
-                  <Text style={styles.period}>{a.year}년 전체</Text>
-                  <Text style={styles.meta}>
-                    {a.payment_date ? `납부일 ${a.payment_date}` : '납부일 없음'}
-                    {a.memo ? ` · ${a.memo}` : ''}
-                  </Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={styles.amount}>{formatWon(a.amount)}</Text>
-                  <View style={[styles.badge, { backgroundColor: Colors.navy }]}>
-                    <Text style={styles.badgeText}>연납</Text>
+            {annual.map((a, index) => (
+              <ListRow
+                key={a.id}
+                first={index === 0}
+                title={`${a.year}년 전체`}
+                meta={`${a.payment_date ? `납부일 ${a.payment_date}` : '납부일 없음'}${
+                  a.memo ? ` · ${a.memo}` : ''
+                }`}
+                trailing={
+                  <View style={styles.rowRight}>
+                    <Text style={styles.amount}>{formatWon(a.amount)}</Text>
+                    <View style={[styles.badge, { backgroundColor: Colors.navy }]}>
+                      <Text style={styles.badgeText}>연납</Text>
+                    </View>
                   </View>
-                </View>
-              </View>
+                }
+              />
             ))}
           </Card>
         ) : null}
@@ -116,62 +105,39 @@ export default function MyPaymentsScreen() {
         <Card>
           <SectionTitle>월별 내역</SectionTitle>
           {loading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader spacing="vertical" />
           ) : rows.length === 0 ? (
-            <Muted>아직 기록이 없습니다.</Muted>
+            <EmptyState message="아직 기록이 없습니다." />
           ) : (
-            rows.map((row) => (
-              <View key={row.id} style={styles.row}>
-                <View style={styles.rowMain}>
-                  <Text style={styles.period}>
-                    {row.year}년 {row.month}월
-                  </Text>
-                  <Text style={styles.meta}>
-                    {row.payment_date ? `납부일 ${row.payment_date}` : '납부일 없음'}
-                    {row.memo ? ` · ${row.memo}` : ''}
-                  </Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={styles.amount}>{formatWon(row.amount)}</Text>
-                  <View style={[styles.badge, { backgroundColor: STATUS_COLOR[row.status] }]}>
-                    <Text style={styles.badgeText}>{PAYMENT_STATUS_LABEL[row.status]}</Text>
+            rows.map((row, index) => (
+              <ListRow
+                key={row.id}
+                first={index === 0}
+                title={`${row.year}년 ${row.month}월`}
+                meta={`${row.payment_date ? `납부일 ${row.payment_date}` : '납부일 없음'}${
+                  row.memo ? ` · ${row.memo}` : ''
+                }`}
+                trailing={
+                  <View style={styles.rowRight}>
+                    <Text style={styles.amount}>{formatWon(row.amount)}</Text>
+                    <View style={[styles.badge, { backgroundColor: STATUS_COLOR[row.status] }]}>
+                      <Text style={styles.badgeText}>{PAYMENT_STATUS_LABEL[row.status]}</Text>
+                    </View>
                   </View>
-                </View>
-              </View>
+                }
+              />
             ))
           )}
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginVertical: Spacing.four },
-  summaryLine: { fontSize: 14, fontWeight: '600', color: Colors.text },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two + 2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  rowMain: { flex: 1, gap: 2 },
-  period: { fontSize: 15, fontWeight: '700', color: Colors.text },
-  meta: { fontSize: 12, color: Colors.textSecondary },
-  rowRight: { alignItems: 'flex-end', gap: 3 },
-  amount: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  badge: { paddingHorizontal: Spacing.two, paddingVertical: 2, borderRadius: Radius.sm },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  summaryLine: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.text },
+  rowRight: { alignItems: 'flex-end', gap: Spacing.half },
+  amount: { ...Typography.body, fontWeight: Weight.bold, color: Colors.text },
+  badge: { paddingHorizontal: Spacing.two, paddingVertical: Spacing.half, borderRadius: Radius.sm },
+  badgeText: { ...Typography.caption, color: Colors.textOnNavy, fontWeight: Weight.bold },
 });

@@ -1,12 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Card, ChipRow, EmptyState, InlineLoader, ListRow, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -44,53 +44,35 @@ export default function ExpensesScreen() {
     total: expenses.filter((e) => e.category === c).reduce((s, e) => s + e.amount, 0),
   })).filter((c) => c.total > 0);
 
+  const chipItems = [
+    { value: null, label: '전체' },
+    ...EXPENSE_CATEGORIES.map((c) => ({ value: c as string, label: c })),
+  ];
+
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="회비 사용 내역"
         subtitle={`${filtered.length}건 · ${formatWon(total)}`}
+        onBack={() => router.back()}
         right={
-          <View style={styles.headerActions}>
-            {isAdmin ? (
-              <Pressable
-                accessibilityLabel="새 지출"
-                onPress={() => router.push('/(app)/finance/expense-form')}
-                style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.7 }]}>
-                <Ionicons name="add" size={20} color={Colors.navy} />
-                <Text style={styles.addLabel}>등록</Text>
-              </Pressable>
-            ) : null}
+          isAdmin ? (
             <Pressable
-              accessibilityLabel="뒤로"
-              onPress={() => router.back()}
-              style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="close" size={20} color={Colors.textOnNavy} />
+              accessibilityLabel="새 지출"
+              onPress={() => router.push('/(app)/finance/expense-form')}
+              style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.7 }]}>
+              <Ionicons name="add" size={20} color={Colors.navy} />
+              <Text style={styles.addLabel}>등록</Text>
             </Pressable>
-          </View>
+          ) : undefined
         }
       />
 
-      <View style={styles.filterBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          <Pressable
-            onPress={() => setCategory(null)}
-            style={[styles.chip, category === null && styles.chipActive]}>
-            <Text style={[styles.chipText, category === null && styles.chipTextActive]}>전체</Text>
-          </Pressable>
-          {EXPENSE_CATEGORIES.map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => setCategory(c)}
-              style={[styles.chip, category === c && styles.chipActive]}>
-              <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+      <ChipRow items={chipItems} value={category} onChange={setCategory} bar />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScreenScroll>
         {loading ? (
-          <ActivityIndicator color={Colors.navy} style={styles.loader} />
+          <InlineLoader />
         ) : (
           <>
             {byCategory.length > 0 && category === null ? (
@@ -108,88 +90,46 @@ export default function ExpensesScreen() {
             <Card>
               <SectionTitle>{category ?? '전체'} 내역</SectionTitle>
               {filtered.length === 0 ? (
-                <Muted>내역이 없습니다.</Muted>
+                <EmptyState message="내역이 없습니다." />
               ) : (
-                filtered.map((expense) => (
-                  <Pressable
+                filtered.map((expense, index) => (
+                  <ListRow
                     key={expense.id}
-                    disabled={!isAdmin}
-                    onPress={() => router.push(`/(app)/finance/expense-form?id=${expense.id}`)}
-                    style={({ pressed }) => [styles.row, pressed && isAdmin && { opacity: 0.7 }]}>
-                    <View style={styles.rowMain}>
-                      <Text style={styles.desc} numberOfLines={1}>
-                        {expense.description}
-                      </Text>
-                      <Text style={styles.meta}>
-                        {formatEventDate(expense.expense_date)} · {expense.category}
-                        {expense.memo ? ` · ${expense.memo}` : ''}
-                      </Text>
-                    </View>
-                    <Text style={styles.amount}>-{formatWon(expense.amount)}</Text>
-                  </Pressable>
+                    first={index === 0}
+                    title={expense.description}
+                    meta={`${formatEventDate(expense.expense_date)} · ${expense.category}${
+                      expense.memo ? ` · ${expense.memo}` : ''
+                    }`}
+                    trailing={<Text style={styles.amount}>-{formatWon(expense.amount)}</Text>}
+                    onPress={
+                      isAdmin
+                        ? () => router.push(`/(app)/finance/expense-form?id=${expense.id}`)
+                        : undefined
+                    }
+                  />
                 ))
               )}
             </Card>
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: Spacing.half,
     backgroundColor: Colors.background,
-    paddingVertical: 6,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.sm,
   },
-  addLabel: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBar: {
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingVertical: Spacing.two,
-  },
-  chips: { paddingHorizontal: Spacing.three, gap: Spacing.two },
-  chip: {
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextActive: { color: Colors.textOnNavy },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginTop: Spacing.five },
+  addLabel: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
   catRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  catName: { fontSize: 14, color: Colors.textSecondary },
-  catTotal: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two + 2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  rowMain: { flex: 1, gap: 2 },
-  desc: { fontSize: 15, fontWeight: '600', color: Colors.text },
-  meta: { fontSize: 12, color: Colors.textSecondary },
-  amount: { fontSize: 15, fontWeight: '700', color: Colors.danger },
+  catName: { ...Typography.body, color: Colors.textSecondary },
+  catTotal: { ...Typography.body, fontWeight: Weight.bold, color: Colors.text },
+  amount: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.danger },
 });

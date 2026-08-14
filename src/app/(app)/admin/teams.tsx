@@ -1,20 +1,22 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  EmptyState,
+  Field,
+  InlineLoader,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
 import { displayName, useActiveMembers } from '@/lib/members';
@@ -153,21 +155,14 @@ export default function TeamsScreen() {
   const assignedCount = new Set(roster.map((r) => r.member_id)).size;
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="팀 관리"
         subtitle={`${teams.filter((t) => t.is_active).length}팀 사용 중`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenScroll>
         <Card>
           <SectionTitle>{editingId ? '팀 수정' : '팀 만들기'}</SectionTitle>
           <Muted>
@@ -224,9 +219,9 @@ export default function TeamsScreen() {
           </Muted>
 
           {loading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader spacing="vertical" />
           ) : teams.length === 0 ? (
-            <Muted>아직 만든 팀이 없습니다.</Muted>
+            <EmptyState message="아직 만든 팀이 없습니다." />
           ) : (
             teams.map((team) => {
               const open = openRoster === team.id;
@@ -325,25 +320,14 @@ export default function TeamsScreen() {
           )}
           <Muted>스위치를 끄면 새 일정·시즌에서 고를 수 없게 됩니다. 기록은 남습니다.</Muted>
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginVertical: Spacing.four },
   field: { gap: Spacing.one },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   colorChip: {
     width: 40,
@@ -354,25 +338,25 @@ const styles = StyleSheet.create({
   },
   colorChipSelected: { borderWidth: 3, borderColor: Colors.text },
   row: {
-    paddingTop: Spacing.two + 2,
+    paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   teamDot: { width: 14, height: 14, borderRadius: 7 },
-  rowText: { flex: 1, gap: 2 },
-  name: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  rowText: { flex: 1, gap: Spacing.half },
+  name: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
   nameInactive: { color: Colors.muted, textDecorationLine: 'line-through' },
-  meta: { fontSize: 12, color: Colors.textSecondary },
+  meta: { ...Typography.caption, color: Colors.textSecondary },
   actions: { flexDirection: 'row', gap: Spacing.three, paddingBottom: Spacing.one },
-  action: { paddingVertical: 2 },
-  actionText: { fontSize: 13, fontWeight: '700', color: Colors.navy },
+  action: { paddingVertical: Spacing.half },
+  actionText: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
   rosterBox: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.two,
-    gap: 2,
+    gap: Spacing.half,
     marginBottom: Spacing.two,
   },
   memberRow: {
@@ -384,7 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   memberRowOn: { backgroundColor: Colors.background },
-  memberName: { flex: 1, fontSize: 15, color: Colors.textSecondary },
-  memberNameOn: { color: Colors.text, fontWeight: '700' },
-  otherTeams: { fontSize: 11, color: Colors.warning },
+  memberName: { flex: 1, ...Typography.bodyLarge, color: Colors.textSecondary },
+  memberNameOn: { color: Colors.text, fontWeight: Weight.bold },
+  otherTeams: { ...Typography.caption, color: Colors.warning },
 });

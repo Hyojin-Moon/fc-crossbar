@@ -1,10 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
-import { Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings';
 
@@ -13,12 +13,9 @@ export default function AdminMenuScreen() {
   const settings = useSettings();
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        title="관리"
-        subtitle={isSuperAdmin ? '최고 관리자' : '관리자'}
-      />
-      <ScrollView contentContainerStyle={styles.content}>
+    <Screen>
+      <ScreenHeader title="관리" subtitle={isSuperAdmin ? '최고 관리자' : '관리자'} />
+      <ScreenScroll>
         <View style={styles.group}>
           <SectionTitle>팀 운영</SectionTitle>
           <MenuRow
@@ -85,8 +82,8 @@ export default function AdminMenuScreen() {
             onPress={() => router.push('/(app)/profile')}
           />
         </View>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
@@ -118,8 +115,6 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  content: { padding: Spacing.three, gap: Spacing.four, paddingBottom: Spacing.six },
   group: { gap: Spacing.two },
   row: {
     flexDirection: 'row',
@@ -139,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: { flex: 1, gap: 2 },
-  title: { fontSize: 15, fontWeight: '700', color: Colors.text },
-  subtitle: { fontSize: 12, color: Colors.textSecondary },
+  text: { flex: 1, gap: Spacing.half },
+  title: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
+  subtitle: { ...Typography.caption, color: Colors.textSecondary },
 });

@@ -1,12 +1,11 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { AppButton, Card, Field, Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeDbError } from '@/lib/errors';
 import { formatWon } from '@/lib/finance';
@@ -68,20 +67,9 @@ export default function TeamSettingsScreen() {
   const parsedAnnual = Number(annualFee.replace(/[,\s]/g, ''));
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        title="팀 설정"
-        subtitle="최고 관리자 전용"
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
-      />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <Screen>
+      <ScreenHeader title="팀 설정" subtitle="최고 관리자 전용" onBack={() => router.back()} />
+      <ScreenScroll>
         {!isSuperAdmin ? (
           <Card>
             <SectionTitle>권한이 없습니다</SectionTitle>
@@ -147,23 +135,13 @@ export default function TeamSettingsScreen() {
             <AppButton label="취소" variant="ghost" onPress={() => router.back()} />
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  switchText: { flex: 1, gap: 2 },
-  switchLabel: { fontSize: 15, fontWeight: '600', color: Colors.text },
+  switchText: { flex: 1, gap: Spacing.half },
+  switchLabel: { ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
 });

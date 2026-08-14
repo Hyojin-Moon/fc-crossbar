@@ -1,12 +1,21 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  EmptyState,
+  Field,
+  InlineLoader,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
 import { createVenue, deleteVenue, fetchVenues, updateVenue } from '@/lib/venues';
@@ -109,21 +118,14 @@ export default function VenuesScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="경기장 관리"
         subtitle={`${venues.filter((v) => v.is_active).length}곳 사용 중`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenScroll>
         <Card>
           <SectionTitle>{editingId ? '경기장 수정' : '경기장 등록'}</SectionTitle>
           <Muted>여기 등록해 두면 일정 만들 때 골라서 주소까지 자동 입력됩니다.</Muted>
@@ -163,9 +165,9 @@ export default function VenuesScreen() {
         <Card>
           <SectionTitle>등록된 경기장</SectionTitle>
           {loading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader spacing="vertical" />
           ) : venues.length === 0 ? (
-            <Muted>아직 등록된 경기장이 없습니다.</Muted>
+            <EmptyState message="아직 등록된 경기장이 없습니다." />
           ) : (
             venues.map((venue) => (
               <View key={venue.id} style={styles.row}>
@@ -209,36 +211,25 @@ export default function VenuesScreen() {
           )}
           <Muted>스위치를 끄면 일정 생성 화면의 선택 목록에서 숨겨집니다.</Muted>
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginVertical: Spacing.four },
   row: {
-    paddingTop: Spacing.two + 2,
+    paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  rowText: { flex: 1, gap: 2 },
-  name: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  rowText: { flex: 1, gap: Spacing.half },
+  name: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
   nameInactive: { color: Colors.muted, textDecorationLine: 'line-through' },
-  meta: { fontSize: 13, color: Colors.textSecondary },
-  memo: { fontSize: 12, color: Colors.muted },
+  meta: { ...Typography.body, color: Colors.textSecondary },
+  memo: { ...Typography.caption, color: Colors.textSecondary },
   actions: { flexDirection: 'row', gap: Spacing.three, paddingBottom: Spacing.two },
-  action: { paddingVertical: 2 },
-  actionText: { fontSize: 13, fontWeight: '700', color: Colors.navy },
+  action: { paddingVertical: Spacing.half },
+  actionText: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
 });

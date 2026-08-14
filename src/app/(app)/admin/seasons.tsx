@@ -1,13 +1,24 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Fragment, useCallback, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  ChipRow,
+  EmptyState,
+  Field,
+  InlineLoader,
+  ListRow,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { formatEventDate, todayLocalISO } from '@/lib/dates';
@@ -26,6 +37,8 @@ const STATUS_COLOR: Record<SeasonStatus, string> = {
   active: Colors.accent,
   closed: Colors.navySoft,
 };
+
+const STATUS_ITEMS = SEASON_STATUSES.map((st) => ({ value: st, label: SEASON_STATUS_LABEL[st] }));
 
 function emptyForm() {
   const year = new Date().getFullYear();
@@ -117,7 +130,7 @@ export default function SeasonsScreen() {
     try {
       await deleteSeason(season.id);
       toast('삭제했습니다.');
-        await load();
+      await load();
     } catch (e) {
       toast(describeDbError(e), 'error');
     } finally {
@@ -126,21 +139,10 @@ export default function SeasonsScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        title="시즌 관리"
-        subtitle={`${seasons.length}개`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
-      />
+    <Screen>
+      <ScreenHeader title="시즌 관리" subtitle={`${seasons.length}개`} onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenScroll>
         <Card>
           <SectionTitle>새 시즌</SectionTitle>
           <Muted>
@@ -163,18 +165,12 @@ export default function SeasonsScreen() {
 
           <View style={styles.field}>
             <Text style={styles.label}>상태</Text>
-            <View style={styles.chips}>
-              {SEASON_STATUSES.map((st) => (
-                <Pressable
-                  key={st}
-                  onPress={() => setForm((prev) => ({ ...prev, status: st }))}
-                  style={[styles.chip, form.status === st && styles.chipActive]}>
-                  <Text style={[styles.chipText, form.status === st && styles.chipTextActive]}>
-                    {SEASON_STATUS_LABEL[st]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <ChipRow
+              items={STATUS_ITEMS}
+              value={form.status}
+              onChange={(status) => setForm((prev) => ({ ...prev, status }))}
+              layout="wrap"
+            />
           </View>
 
           <Field label="메모" value={form.memo} onChangeText={set('memo')} placeholder="선택" />
@@ -184,26 +180,21 @@ export default function SeasonsScreen() {
         <Card>
           <SectionTitle>시즌 목록</SectionTitle>
           {loading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader spacing="vertical" />
           ) : seasons.length === 0 ? (
-            <Muted>아직 시즌이 없습니다.</Muted>
+            <EmptyState message="아직 시즌이 없습니다." />
           ) : (
-            seasons.map((season) => (
-              <View key={season.id} style={styles.row}>
-                <Pressable
+            seasons.map((season, index) => (
+              <Fragment key={season.id}>
+                <ListRow
+                  first={index === 0}
+                  dotColor={STATUS_COLOR[season.status]}
+                  title={season.name}
+                  meta={`${formatEventDate(season.start_date)} ~ ${formatEventDate(season.end_date)} · ${
+                    SEASON_STATUS_LABEL[season.status]
+                  }${season.memo ? ` · ${season.memo}` : ''}`}
                   onPress={() => router.push(`/(app)/admin/season-roster?id=${season.id}`)}
-                  style={({ pressed }) => [styles.rowHead, pressed && { opacity: 0.7 }]}>
-                  <View style={[styles.dot, { backgroundColor: STATUS_COLOR[season.status] }]} />
-                  <View style={styles.rowText}>
-                    <Text style={styles.name}>{season.name}</Text>
-                    <Text style={styles.meta}>
-                      {formatEventDate(season.start_date)} ~ {formatEventDate(season.end_date)} ·{' '}
-                      {SEASON_STATUS_LABEL[season.status]}
-                    </Text>
-                    {season.memo ? <Text style={styles.memo}>{season.memo}</Text> : null}
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-                </Pressable>
+                />
                 <View style={styles.actions}>
                   <Pressable
                     onPress={() => router.push(`/(app)/admin/season-roster?id=${season.id}`)}
@@ -216,56 +207,21 @@ export default function SeasonsScreen() {
                     <Text style={[styles.actionText, { color: Colors.danger }]}>삭제</Text>
                   </Pressable>
                 </View>
-              </View>
+              </Fragment>
             ))
           )}
         </Card>
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginVertical: Spacing.four },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
   field: { gap: Spacing.one },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextActive: { color: Colors.textOnNavy },
-  row: { borderTopWidth: 1, borderTopColor: Colors.border },
-  rowHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingTop: Spacing.two + 2,
-  },
-  dot: { width: 9, height: 9, borderRadius: 5 },
-  rowText: { flex: 1, gap: 2 },
-  name: { fontSize: 15, fontWeight: '700', color: Colors.text },
-  meta: { fontSize: 12, color: Colors.textSecondary },
-  memo: { fontSize: 12, color: Colors.muted },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   actions: { flexDirection: 'row', gap: Spacing.three, paddingVertical: Spacing.two },
-  action: { paddingVertical: 2 },
-  actionText: { fontSize: 13, fontWeight: '700', color: Colors.navy },
+  action: { paddingVertical: Spacing.half },
+  actionText: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
 });

@@ -1,13 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, FullScreenLoader, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  Field,
+  FullScreenLoader,
+  ListRow,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+  SegmentedControl,
+} from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -29,6 +40,8 @@ import {
 } from '@/lib/seasons';
 import { useTeams } from '@/lib/teams';
 import type { Season, SeasonStatus } from '@/types/database';
+
+const STATUS_OPTIONS = SEASON_STATUSES.map((st) => ({ value: st, label: SEASON_STATUS_LABEL[st] }));
 
 export default function SeasonRosterScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -80,15 +93,15 @@ export default function SeasonRosterScreen() {
   if (loading) return <FullScreenLoader />;
   if (!season) {
     return (
-      <View style={styles.screen}>
+      <Screen>
         <ScreenHeader title="시즌" />
-        <View style={styles.content}>
+        <ScreenScroll>
           <Card>
             <SectionTitle>시즌을 찾을 수 없습니다</SectionTitle>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
           </Card>
-        </View>
-      </View>
+        </ScreenScroll>
+      </Screen>
     );
   }
 
@@ -148,43 +161,27 @@ export default function SeasonRosterScreen() {
   const availableTeams = teams.filter((t) => t.is_active && !joinedTeamIds.has(t.id));
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title={season.name}
         subtitle={`${formatEventDate(season.start_date)} ~ ${formatEventDate(season.end_date)} · ${
           SEASON_STATUS_LABEL[season.status]
         }`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenScroll>
         <Card>
           <SectionTitle>시즌 정보</SectionTitle>
 
           <View style={styles.field}>
             <Text style={styles.label}>상태</Text>
-            <View style={styles.chips}>
-              {SEASON_STATUSES.map((st) => (
-                <Pressable
-                  key={st}
-                  disabled={busy}
-                  onPress={() => setInfo((prev) => ({ ...prev, status: st }))}
-                  style={[styles.statusChip, info.status === st && styles.statusChipOn]}>
-                  <Text
-                    style={[styles.statusText, info.status === st && styles.statusTextOn]}>
-                    {SEASON_STATUS_LABEL[st]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            {/* 통계 탭과 시즌 탭이 '진행 중' 시즌을 기본으로 골라 보여준다 */}
+            <SegmentedControl
+              options={STATUS_OPTIONS}
+              value={info.status}
+              disabled={busy}
+              onChange={(status) => setInfo((prev) => ({ ...prev, status }))}
+            />
             <Muted>‘진행 중’ 으로 두면 시즌 · 통계 탭에서 이 시즌이 기본으로 열립니다.</Muted>
           </View>
 
@@ -293,27 +290,30 @@ export default function SeasonRosterScreen() {
           const open = openTeam === squad.seasonTeamId;
           return (
             <Card key={squad.seasonTeamId}>
-              <View style={styles.teamHead}>
-                <View
-                  style={[styles.teamDot, { backgroundColor: squad.color ?? Colors.navySoft }]}
-                />
-                <Text style={styles.teamName}>{squad.teamName}</Text>
-                <Text style={styles.teamCount}>{squad.members.length}명</Text>
-                <Pressable
-                  disabled={busy}
-                  onPress={async () => {
-                    const ok = await confirmAsync({
-                      title: '참가 취소',
-                      message: `${squad.teamName}을(를) 이 시즌에서 뺍니다.\n이 시즌 명단 ${squad.members.length}명도 함께 지워집니다.`,
-                      confirmLabel: '빼기',
-                      destructive: true,
-                    });
-                    if (ok) await run('참가 취소', () => removeSeasonTeam(squad.seasonTeamId));
-                  }}
-                  style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.6 }]}>
-                  <Text style={styles.removeText}>참가 취소</Text>
-                </Pressable>
-              </View>
+              <ListRow
+                first
+                dotColor={squad.color ?? Colors.navySoft}
+                title={squad.teamName}
+                trailing={
+                  <View style={styles.teamHeadTrailing}>
+                    <Text style={styles.teamCount}>{squad.members.length}명</Text>
+                    <Pressable
+                      disabled={busy}
+                      onPress={async () => {
+                        const ok = await confirmAsync({
+                          title: '참가 취소',
+                          message: `${squad.teamName}을(를) 이 시즌에서 뺍니다.\n이 시즌 명단 ${squad.members.length}명도 함께 지워집니다.`,
+                          confirmLabel: '빼기',
+                          destructive: true,
+                        });
+                        if (ok) await run('참가 취소', () => removeSeasonTeam(squad.seasonTeamId));
+                      }}
+                      style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.6 }]}>
+                      <Text style={styles.removeText}>참가 취소</Text>
+                    </Pressable>
+                  </View>
+                }
+              />
 
               {squad.members.length > 0 ? (
                 <View style={styles.memberList}>
@@ -387,79 +387,55 @@ export default function SeasonRosterScreen() {
             </Card>
           );
         })}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   addChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingVertical: 7,
+    gap: Spacing.half,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.three,
-    borderRadius: 999,
+    borderRadius: Radius.full,
     borderWidth: 1,
     borderColor: Colors.navy,
     backgroundColor: Colors.background,
   },
-  addChipText: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginTop: Spacing.one },
+  addChipText: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary, marginTop: Spacing.one },
   field: { gap: Spacing.one },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
-  statusChip: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: Radius.sm,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-  },
-  statusChipOn: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  statusText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
-  statusTextOn: { color: Colors.textOnNavy },
-  teamHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  teamDot: { width: 12, height: 12, borderRadius: 6 },
-  teamName: { flex: 1, fontSize: 16, fontWeight: '800', color: Colors.text },
-  teamCount: { fontSize: 13, fontWeight: '700', color: Colors.navy },
+  teamHeadTrailing: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  teamCount: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
   removeBtn: { paddingHorizontal: Spacing.one },
-  removeText: { fontSize: 12, fontWeight: '700', color: Colors.danger },
+  removeText: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.danger },
   memberList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
   memberChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 5,
+    gap: Spacing.one,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.sm,
     backgroundColor: Colors.surface,
   },
-  memberChipText: { fontSize: 13, color: Colors.text },
+  memberChipText: { ...Typography.body, color: Colors.text },
   toggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: Spacing.one,
     paddingVertical: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  toggleText: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  picker: { gap: 2 },
+  toggleText: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
+  picker: { gap: Spacing.half },
   pickRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -470,7 +446,7 @@ const styles = StyleSheet.create({
   },
   pickRowOn: { backgroundColor: '#EAF7F1' },
   pickRowOff: { opacity: 0.45 },
-  pickName: { flex: 1, fontSize: 15, color: Colors.text },
-  pickNameOn: { fontWeight: '700' },
-  pickNote: { fontSize: 12, color: Colors.muted },
+  pickName: { flex: 1, ...Typography.bodyLarge, color: Colors.text },
+  pickNameOn: { fontWeight: Weight.bold },
+  pickNote: { ...Typography.caption, color: Colors.muted },
 });

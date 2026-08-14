@@ -34,6 +34,7 @@ export const VoteColors: Record<string, string> = {
 export const Spacing = {
   half: 2,
   one: 4,
+  oneHalf: 6,
   two: 8,
   three: 16,
   four: 24,
@@ -45,6 +46,7 @@ export const Radius = {
   sm: 8,
   md: 12,
   lg: 16,
+  full: 999,
 } as const;
 
 export const Fonts = Platform.select({
@@ -53,3 +55,23 @@ export const Fonts = Platform.select({
 });
 
 export const MaxContentWidth = 800;
+
+export const Breakpoints = { wide: 800 } as const;
+
+export const Typography = {
+  micro: { fontSize: 10, lineHeight: 13 },
+  caption: { fontSize: 12, lineHeight: 16 },
+  body: { fontSize: 13, lineHeight: 17 },
+  bodyLarge: { fontSize: 15, lineHeight: 19 },
+  title: { fontSize: 19, lineHeight: 23 },
+  titleLarge: { fontSize: 22, lineHeight: 26 },
+  headline: { fontSize: 26, lineHeight: 31 },
+  display: { fontSize: 34, lineHeight: 38 },
+  displayLarge: { fontSize: 40, lineHeight: 44 },
+} as const;
+
+export const Weight = {
+  regular: '400',
+  semibold: '600',
+  bold: '700',
+} as const;

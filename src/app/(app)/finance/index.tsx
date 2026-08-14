@@ -1,19 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
-import { Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Card, EmptyState, InlineLoader, ListRow, Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
 import { useAuth } from '@/lib/auth-context';
@@ -61,25 +53,11 @@ export default function FinanceDashboardScreen() {
   );
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        title="회비"
-        subtitle={`${year}년 ${month}월`}
-      />
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              void load();
-            }}
-            tintColor={Colors.navy}
-          />
-        }>
+    <Screen>
+      <ScreenHeader title="회비" subtitle={`${year}년 ${month}월`} />
+      <ScreenScroll>
         {loading ? (
-          <ActivityIndicator color={Colors.navy} style={styles.loader} />
+          <InlineLoader />
         ) : error ? (
           <Card>
             <SectionTitle>불러오지 못했습니다</SectionTitle>
@@ -147,34 +125,28 @@ export default function FinanceDashboardScreen() {
             <Card>
               <SectionTitle>최근 지출</SectionTitle>
               {recent.length === 0 ? (
-                <Muted>지출 기록이 없습니다.</Muted>
+                <EmptyState message="지출 기록이 없습니다." />
               ) : (
-                recent.map((expense) => (
-                  <Pressable
+                recent.map((expense, index) => (
+                  <ListRow
                     key={expense.id}
-                    disabled={!isAdmin}
-                    onPress={() => router.push(`/(app)/finance/expense-form?id=${expense.id}`)}
-                    style={({ pressed }) => [
-                      styles.expenseRow,
-                      pressed && isAdmin && { opacity: 0.7 },
-                    ]}>
-                    <View style={styles.expenseMain}>
-                      <Text style={styles.expenseDesc} numberOfLines={1}>
-                        {expense.description}
-                      </Text>
-                      <Text style={styles.expenseMeta}>
-                        {formatEventDate(expense.expense_date)} · {expense.category}
-                      </Text>
-                    </View>
-                    <Text style={styles.expenseAmount}>-{formatWon(expense.amount)}</Text>
-                  </Pressable>
+                    first={index === 0}
+                    title={expense.description}
+                    meta={`${formatEventDate(expense.expense_date)} · ${expense.category}`}
+                    trailing={<Text style={styles.expenseAmount}>-{formatWon(expense.amount)}</Text>}
+                    onPress={
+                      isAdmin
+                        ? () => router.push(`/(app)/finance/expense-form?id=${expense.id}`)
+                        : undefined
+                    }
+                  />
                 ))
               )}
             </Card>
           </>
         ) : null}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
@@ -215,10 +187,7 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginTop: Spacing.five },
-  balance: { fontSize: 34, fontWeight: '800', color: Colors.navy },
+  balance: { ...Typography.display, fontWeight: Weight.bold, color: Colors.navy },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   tile: {
     flexGrow: 1,
@@ -228,10 +197,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: Radius.md,
     padding: Spacing.three,
-    gap: 2,
+    gap: Spacing.half,
   },
-  tileValue: { fontSize: 18, fontWeight: '800' },
-  tileLabel: { fontSize: 12, color: Colors.textSecondary },
+  tileValue: { ...Typography.title, fontWeight: Weight.bold },
+  tileLabel: { ...Typography.caption, color: Colors.textSecondary },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,19 +219,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuText: { flex: 1, gap: 2 },
-  menuTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
-  menuSubtitle: { fontSize: 12, color: Colors.textSecondary },
-  expenseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  expenseMain: { flex: 1, gap: 2 },
-  expenseDesc: { fontSize: 14, fontWeight: '600', color: Colors.text },
-  expenseMeta: { fontSize: 12, color: Colors.textSecondary },
-  expenseAmount: { fontSize: 14, fontWeight: '700', color: Colors.danger },
+  menuText: { flex: 1, gap: Spacing.half },
+  menuTitle: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
+  menuSubtitle: { ...Typography.caption, color: Colors.textSecondary },
+  expenseAmount: { ...Typography.body, fontWeight: Weight.bold, color: Colors.danger },
 });

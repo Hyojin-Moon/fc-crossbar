@@ -48,3 +48,6 @@ example
 .claude/
 # wrangler
 .wrangler/
+
+# codex
+.codex/

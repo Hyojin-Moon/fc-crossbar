@@ -1,13 +1,21 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, FullScreenLoader, Muted, SectionTitle } from '@/components/ui';
+import {
+  AppButton,
+  Card,
+  FullScreenLoader,
+  ListRow,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
 import { VoteCard } from '@/components/vote-card';
-import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
+import { Colors, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { formatDeadline, formatEventDateLong, formatTimeRange } from '@/lib/dates';
@@ -66,16 +74,16 @@ export default function EventDetailScreen() {
   if (loading) return <FullScreenLoader />;
   if (!event) {
     return (
-      <View style={styles.screen}>
+      <Screen>
         <ScreenHeader title="일정" />
-        <View style={styles.content}>
+        <ScreenScroll>
           <Card>
             <SectionTitle>일정을 찾을 수 없습니다</SectionTitle>
             <Muted>삭제되었거나 접근 권한이 없습니다.</Muted>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
           </Card>
-        </View>
-      </View>
+        </ScreenScroll>
+      </Screen>
     );
   }
 
@@ -144,22 +152,14 @@ export default function EventDetailScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title={event.title}
         subtitle={`${MATCH_TYPE_LABEL[event.match_type]} · ${formatEventDateLong(event.event_date)}`}
-        right={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScreenScroll>
         {profile ? (
           <VoteCard
             event={event}
@@ -210,35 +210,31 @@ export default function EventDetailScreen() {
         <Card>
           <SectionTitle>참석 현황</SectionTitle>
           <Muted>항목을 누르면 명단이 보입니다.</Muted>
-          {groups.map((group) => (
-            <View key={group.key}>
-              <Pressable
-                onPress={() => setExpanded(expanded === group.key ? null : group.key)}
-                style={({ pressed }) => [styles.groupRow, pressed && { opacity: 0.7 }]}>
-                <View style={[styles.groupDot, { backgroundColor: group.color }]} />
-                <Text style={styles.groupLabel}>{group.label}</Text>
-                <Text style={styles.groupCount}>{group.people.length}명</Text>
-                <Ionicons
-                  name={expanded === group.key ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color={Colors.muted}
-                />
-              </Pressable>
-              {expanded === group.key ? (
-                <View style={styles.nameList}>
-                  {group.people.length === 0 ? (
-                    <Muted>없음</Muted>
-                  ) : (
-                    group.people.map((m) => (
+          {groups.map((group, index) => {
+            const open = expanded === group.key;
+            return (
+              <ListRow
+                key={group.key}
+                first={index === 0}
+                dotColor={group.color}
+                title={group.label}
+                trailing={`${group.people.length}명`}
+                expanded={open}
+                onPress={() => setExpanded(open ? null : group.key)}>
+                {group.people.length === 0 ? (
+                  <Muted>없음</Muted>
+                ) : (
+                  <View style={styles.nameList}>
+                    {group.people.map((m) => (
                       <Text key={m.id} style={styles.name}>
                         {displayName(m)}
                       </Text>
-                    ))
-                  )}
-                </View>
-              ) : null}
-            </View>
-          ))}
+                    ))}
+                  </View>
+                )}
+              </ListRow>
+            );
+          })}
         </Card>
 
         {recordedAttendance.length > 0 ? (
@@ -299,8 +295,8 @@ export default function EventDetailScreen() {
             ) : null}
           </Card>
         ) : null}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
@@ -314,37 +310,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   infoRow: { flexDirection: 'row', gap: Spacing.two },
-  infoLabel: { width: 48, fontSize: 14, color: Colors.textSecondary },
-  infoValue: { flex: 1, fontSize: 14, color: Colors.text },
-  groupRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two + 2,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  groupDot: { width: 10, height: 10, borderRadius: 5 },
-  groupLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.text },
-  groupCount: { fontSize: 15, fontWeight: '800', color: Colors.navy },
-  nameList: { paddingBottom: Spacing.two, paddingLeft: Spacing.four, gap: 2 },
-  name: { fontSize: 14, color: Colors.textSecondary },
+  infoLabel: { width: 48, ...Typography.body, color: Colors.textSecondary },
+  infoValue: { flex: 1, ...Typography.body, color: Colors.text },
+  nameList: { paddingBottom: Spacing.two, paddingLeft: Spacing.four, gap: Spacing.half },
+  name: { ...Typography.body, color: Colors.textSecondary },
   scoreRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  scoreTeam: { flex: 1, minWidth: 0, fontSize: 14, fontWeight: '700', color: Colors.text },
+  scoreTeam: { flex: 1, minWidth: 0, ...Typography.body, fontWeight: Weight.bold, color: Colors.text },
   scoreTeamRight: { textAlign: 'right' },
-  scoreValue: { fontSize: 18, fontWeight: '800', color: Colors.navy },
-  attendanceLine: { fontSize: 14, color: Colors.text },
-  attendanceTotal: { fontSize: 15, fontWeight: '800', color: Colors.navy },
-  infoRowLast: {},
+  scoreValue: { ...Typography.title, fontWeight: Weight.bold, color: Colors.navy },
+  attendanceLine: { ...Typography.body, color: Colors.text },
+  attendanceTotal: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.navy },
 });

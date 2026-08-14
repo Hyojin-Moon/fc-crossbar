@@ -1,6 +1,4 @@
-import { StyleSheet, View } from 'react-native';
-
-import { Colors } from '@/constants/theme';
+import { Screen } from '@/components/ui';
 
 /**
  * 일정 목록은 홈으로 합쳤다. 이 탭은 숨겨져 있고 상세·폼·출석 체크만 쓴다.
@@ -9,9 +7,5 @@ import { Colors } from '@/constants/theme';
  * 다른 탭으로 이동할 때도 리다이렉트가 다시 튄다.
  */
 export default function EventsIndex() {
-  return <View style={styles.screen} />;
+  return <Screen>{null}</Screen>;
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-});

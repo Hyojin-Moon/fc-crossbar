@@ -1,12 +1,20 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, FullScreenLoader, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  FullScreenLoader,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+  SegmentedControl,
+} from '@/components/ui';
+import { Colors, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
 import {
   ATTENDANCE_LABEL,
   ATTENDANCE_STATUSES,
@@ -31,6 +39,11 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   absent: Colors.muted,
   no_show: Colors.danger,
 };
+const STATUS_OPTIONS = ATTENDANCE_STATUSES.map((s) => ({
+  value: s,
+  label: ATTENDANCE_LABEL[s],
+  color: STATUS_COLOR[s],
+}));
 
 export default function AttendanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,15 +77,15 @@ export default function AttendanceScreen() {
   if (loading) return <FullScreenLoader />;
   if (!event) {
     return (
-      <View style={styles.screen}>
+      <Screen>
         <ScreenHeader title="출석 체크" />
-        <View style={styles.content}>
+        <ScreenScroll>
           <Card>
             <SectionTitle>일정을 찾을 수 없습니다</SectionTitle>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
           </Card>
-        </View>
-      </View>
+        </ScreenScroll>
+      </Screen>
     );
   }
 
@@ -123,21 +136,14 @@ export default function AttendanceScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader
         title="출석 체크"
         subtitle={`${event.title} · ${formatEventDateLong(event.event_date)}`}
-        right={
-          <Pressable
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="close" size={20} color={Colors.textOnNavy} />
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScreenScroll>
         {!isAdmin ? (
           <Card>
             <SectionTitle>권한이 없습니다</SectionTitle>
@@ -193,36 +199,12 @@ export default function AttendanceScreen() {
                       </Text>
                     </View>
 
-                    <View style={styles.statusRow}>
-                      {ATTENDANCE_STATUSES.map((status) => {
-                        const selected = record?.status === status;
-                        const color = STATUS_COLOR[status];
-                        return (
-                          <Pressable
-                            key={status}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected }}
-                            disabled={busy}
-                            onPress={() => void setStatus(member.id, status)}
-                            style={({ pressed }) => [
-                              styles.statusButton,
-                              selected
-                                ? { backgroundColor: color, borderColor: color }
-                                : { borderColor: color },
-                              busy && { opacity: 0.5 },
-                              pressed && { opacity: 0.7 },
-                            ]}>
-                            <Text
-                              style={[
-                                styles.statusText,
-                                { color: selected ? '#FFFFFF' : color },
-                              ]}>
-                              {ATTENDANCE_LABEL[status]}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
+                    <SegmentedControl
+                      options={STATUS_OPTIONS}
+                      value={record?.status ?? null}
+                      disabled={busy}
+                      onChange={(status) => void setStatus(member.id, status)}
+                    />
 
                     {!record && votedAttend ? (
                       <Text style={styles.hint}>참석 투표 · 아직 기록 없음</Text>
@@ -233,42 +215,21 @@ export default function AttendanceScreen() {
             </Card>
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.navySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  summaryLine: { fontSize: 13, color: Colors.textSecondary },
+  summaryLine: { ...Typography.body, color: Colors.textSecondary },
   row: {
-    paddingTop: Spacing.two + 2,
+    paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  name: { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.text },
-  voteTag: { fontSize: 12, fontWeight: '600' },
-  statusRow: { flexDirection: 'row', gap: Spacing.one },
-  statusButton: {
-    flex: 1,
-    minHeight: 40,
-    borderRadius: Radius.sm,
-    borderWidth: 1.5,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusText: { fontSize: 13, fontWeight: '700' },
-  hint: { fontSize: 11, color: Colors.danger },
+  name: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
+  voteTag: { ...Typography.caption, fontWeight: Weight.semibold },
+  hint: { ...Typography.caption, color: Colors.danger },
 });

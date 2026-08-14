@@ -1,21 +1,22 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
-import { AppButton, Card, Field, FullScreenLoader, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import {
+  AppButton,
+  Card,
+  ChipRow,
+  Field,
+  FullScreenLoader,
+  Muted,
+  SectionTitle,
+  Screen,
+  ScreenScroll,
+} from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatTime, todayLocalISO, toTimeString } from '@/lib/dates';
 import { createEvent, fetchEvent, updateEvent, type EventInput } from '@/lib/events';
@@ -23,6 +24,8 @@ import { describeDbError } from '@/lib/errors';
 import { fetchSeasonSquads, useSeasons, type SeasonSquad } from '@/lib/seasons';
 import { MATCH_TYPES, MATCH_TYPE_LABEL, useVenues } from '@/lib/venues';
 import type { MatchType } from '@/types/database';
+
+const MATCH_TYPE_ITEMS = MATCH_TYPES.map((t) => ({ value: t, label: MATCH_TYPE_LABEL[t] }));
 
 function combineLocal(dateStr: string, timeStr: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
@@ -250,12 +253,10 @@ export default function EventFormScreen() {
   if (loading) return <FullScreenLoader />;
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader title={isEdit ? '일정 수정' : '새 일정'} subtitle="관리자 전용" />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScreenScroll>
           <Card>
             <SectionTitle>기본 정보</SectionTitle>
             <Field
@@ -266,19 +267,7 @@ export default function EventFormScreen() {
             />
             <View style={styles.field}>
               <Text style={styles.label}>경기 유형</Text>
-              <View style={styles.chips}>
-                {MATCH_TYPES.map((type) => (
-                  <Pressable
-                    key={type}
-                    onPress={() => setMatchType(type)}
-                    style={[styles.chip, form.matchType === type && styles.chipActive]}>
-                    <Text
-                      style={[styles.chipText, form.matchType === type && styles.chipTextActive]}>
-                      {MATCH_TYPE_LABEL[type]}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <ChipRow items={MATCH_TYPE_ITEMS} value={form.matchType} onChange={setMatchType} layout="wrap" />
             </View>
 
             {form.matchType === 'season' ? (
@@ -290,22 +279,12 @@ export default function EventFormScreen() {
                 <>
                   <View style={styles.field}>
                     <Text style={styles.label}>시즌</Text>
-                    <View style={styles.chips}>
-                      {seasons.map((season) => (
-                        <Pressable
-                          key={season.id}
-                          onPress={() => selectSeason(season.id)}
-                          style={[styles.chip, form.seasonId === season.id && styles.chipActive]}>
-                          <Text
-                            style={[
-                              styles.chipText,
-                              form.seasonId === season.id && styles.chipTextActive,
-                            ]}>
-                            {season.name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
+                    <ChipRow
+                      items={seasons.map((s) => ({ value: s.id, label: s.name }))}
+                      value={form.seasonId}
+                      onChange={selectSeason}
+                      layout="wrap"
+                    />
                   </View>
 
                   {!form.seasonId ? null : squads.length < 2 ? (
@@ -385,30 +364,22 @@ export default function EventFormScreen() {
             {venues.length > 0 ? (
               <View style={styles.field}>
                 <Text style={styles.label}>등록된 경기장</Text>
-                <View style={styles.chips}>
-                  {venues.map((venue) => (
-                    <Pressable
-                      key={venue.id}
-                      onPress={() =>
-                        setForm((prev) => ({
-                          ...prev,
-                          venueId: venue.id,
-                          venueName: venue.name,
-                          venueAddress: venue.address ?? '',
-                          mapUrl: venue.map_url ?? prev.mapUrl,
-                        }))
-                      }
-                      style={[styles.chip, form.venueId === venue.id && styles.chipActive]}>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          form.venueId === venue.id && styles.chipTextActive,
-                        ]}>
-                        {venue.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <ChipRow
+                  items={venues.map((v) => ({ value: v.id, label: v.name }))}
+                  value={form.venueId}
+                  onChange={(venueId) => {
+                    const venue = venues.find((v) => v.id === venueId);
+                    if (!venue) return;
+                    setForm((prev) => ({
+                      ...prev,
+                      venueId: venue.id,
+                      venueName: venue.name,
+                      venueAddress: venue.address ?? '',
+                      mapUrl: venue.map_url ?? prev.mapUrl,
+                    }));
+                  }}
+                  layout="wrap"
+                />
                 <Muted>고르면 주소와 지도 링크가 자동으로 채워집니다.</Muted>
               </View>
             ) : (
@@ -508,36 +479,34 @@ export default function EventFormScreen() {
             loading={saving}
           />
           <AppButton label="취소" variant="ghost" onPress={() => router.back()} />
-        </ScrollView>
+        </ScreenScroll>
       </KeyboardAvoidingView>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
   flex: { flex: 1 },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
   field: { gap: Spacing.one },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: {
-    paddingVertical: 8,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.three,
-    borderRadius: 999,
+    borderRadius: Radius.full,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.background,
   },
   chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
   chipDisabled: { opacity: 0.4 },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  chipText: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   chipTextActive: { color: Colors.textOnNavy },
   chipTextDisabled: { color: Colors.muted },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
   multiline: { minHeight: 84, paddingTop: Spacing.two, textAlignVertical: 'top' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  switchText: { flex: 1, gap: 2 },
-  switchLabel: { fontSize: 15, fontWeight: '600', color: Colors.text },
+  switchText: { flex: 1, gap: Spacing.half },
+  switchLabel: { ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
 });

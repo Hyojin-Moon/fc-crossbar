@@ -14,7 +14,7 @@ import {
   ScreenScroll,
   SegmentedControl,
 } from '@/components/ui';
-import { Colors, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
 import {
   ATTENDANCE_LABEL,
   ATTENDANCE_STATUSES,
@@ -30,6 +30,7 @@ import { formatEventDateLong } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
 import { fetchEvent, type EventWithVotes } from '@/lib/events';
 import { displayName, useActiveMembers } from '@/lib/members';
+import { useBreakpoint } from '@/lib/responsive';
 import { useVoteOptions } from '@/lib/vote-options';
 import type { AttendanceStatus, EventAttendance } from '@/types/database';
 
@@ -51,6 +52,7 @@ export default function AttendanceScreen() {
   const { members, memberIds } = useActiveMembers();
   const voteOptions = useVoteOptions();
   const toast = useToast();
+  const { isWide } = useBreakpoint();
 
   const [event, setEvent] = useState<EventWithVotes | null>(null);
   const [rows, setRows] = useState<EventAttendance[]>([]);
@@ -78,8 +80,8 @@ export default function AttendanceScreen() {
   if (!event) {
     return (
       <Screen>
-        <ScreenHeader title="출석 체크" />
-        <ScreenScroll>
+        <ScreenHeader title="출석 체크" fullWidth={isWide} />
+        <ScreenScroll fullWidth={isWide}>
           <Card>
             <SectionTitle>일정을 찾을 수 없습니다</SectionTitle>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
@@ -141,9 +143,10 @@ export default function AttendanceScreen() {
         title="출석 체크"
         subtitle={`${event.title} · ${formatEventDateLong(event.event_date)}`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         {!isAdmin ? (
           <Card>
             <SectionTitle>권한이 없습니다</SectionTitle>
@@ -173,6 +176,7 @@ export default function AttendanceScreen() {
               <SectionTitle>회원별</SectionTitle>
               <Muted>버튼을 누르면 바로 저장됩니다. 같은 버튼을 다시 누르면 기록이 지워집니다.</Muted>
 
+              <View style={isWide && styles.grid}>
               {members.map((member) => {
                 const record = byMember.get(member.id);
                 const vote = voteByMember.get(member.id);
@@ -185,7 +189,8 @@ export default function AttendanceScreen() {
                   : false;
 
                 return (
-                  <View key={member.id} style={styles.row}>
+                  <View key={member.id} style={isWide && styles.col}>
+                  <View style={[styles.row, isWide && styles.rowWide]}>
                     <View style={styles.rowTop}>
                       <Text style={styles.name} numberOfLines={1}>
                         {displayName(member)}
@@ -210,8 +215,10 @@ export default function AttendanceScreen() {
                       <Text style={styles.hint}>참석 투표 · 아직 기록 없음</Text>
                     ) : null}
                   </View>
+                  </View>
                 );
               })}
+              </View>
             </Card>
           </>
         )}
@@ -222,12 +229,15 @@ export default function AttendanceScreen() {
 
 const styles = StyleSheet.create({
   summaryLine: { ...Typography.body, color: Colors.textSecondary },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   row: {
     paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
+  rowWide: { borderTopWidth: 0 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   name: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
   voteTag: { ...Typography.caption, fontWeight: Weight.semibold },

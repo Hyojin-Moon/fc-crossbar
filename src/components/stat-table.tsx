@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import type { StatRow } from '@/lib/match-stats';
+import { useBreakpoint } from '@/lib/responsive';
 import type { StatType } from '@/types/database';
 
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
  * 스탯이 하나도 없는 회원은 넣지 않는다 (0만 가득한 표가 된다).
  */
 export function StatTable({ rows, types, meId, sortBy, onSortChange }: Props) {
+  const { isWide } = useBreakpoint();
   const codes = types.map((t) => t.code);
   const listed = rows.filter((r) => codes.some((c) => (r.totals[c] ?? 0) > 0));
 
@@ -35,7 +37,7 @@ export function StatTable({ rows, types, meId, sortBy, onSortChange }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.fixed}>
+      <View style={[styles.fixed, isWide && styles.fixedWide]}>
         <Pressable onPress={() => onSortChange('name')} style={styles.headCell}>
           <Text style={[styles.headText, sortBy === 'name' && styles.headTextActive]}>이름</Text>
         </Pressable>
@@ -107,6 +109,7 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row' },
   flex: { flex: 1 },
   fixed: { width: 128 },
+  fixedWide: { width: 160 },
   headRow: { flexDirection: 'row', height: HEAD_HEIGHT },
   bodyRow: { flexDirection: 'row', height: ROW_HEIGHT, alignItems: 'center' },
   headCell: { height: HEAD_HEIGHT, justifyContent: 'center' },

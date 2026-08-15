@@ -15,9 +15,10 @@ import {
   Screen,
   ScreenScroll,
 } from '@/components/ui';
-import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
+import { useBreakpoint } from '@/lib/responsive';
 import { createVenue, deleteVenue, fetchVenues, updateVenue } from '@/lib/venues';
 import type { Venue } from '@/types/database';
 
@@ -25,6 +26,7 @@ const EMPTY = { name: '', address: '', mapUrl: '', memo: '' };
 
 export default function VenuesScreen() {
   const toast = useToast();
+  const { isWide } = useBreakpoint();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -123,9 +125,10 @@ export default function VenuesScreen() {
         title="경기장 관리"
         subtitle={`${venues.filter((v) => v.is_active).length}곳 사용 중`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <SectionTitle>{editingId ? '경기장 수정' : '경기장 등록'}</SectionTitle>
           <Muted>여기 등록해 두면 일정 만들 때 골라서 주소까지 자동 입력됩니다.</Muted>
@@ -169,8 +172,10 @@ export default function VenuesScreen() {
           ) : venues.length === 0 ? (
             <EmptyState message="아직 등록된 경기장이 없습니다." />
           ) : (
-            venues.map((venue) => (
-              <View key={venue.id} style={styles.row}>
+            <View style={isWide && styles.grid}>
+            {venues.map((venue) => (
+              <View key={venue.id} style={isWide && styles.col}>
+              <View style={[styles.row, isWide && styles.rowWide]}>
                 <View style={styles.rowTop}>
                   <View style={styles.rowText}>
                     <Text style={[styles.name, !venue.is_active && styles.nameInactive]}>
@@ -207,7 +212,9 @@ export default function VenuesScreen() {
                   </Pressable>
                 </View>
               </View>
-            ))
+              </View>
+            ))}
+            </View>
           )}
           <Muted>스위치를 끄면 일정 생성 화면의 선택 목록에서 숨겨집니다.</Muted>
         </Card>
@@ -217,12 +224,15 @@ export default function VenuesScreen() {
 }
 
 const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   row: {
     paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
+  rowWide: { borderTopWidth: 0 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   rowText: { flex: 1, gap: Spacing.half },
   name: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },

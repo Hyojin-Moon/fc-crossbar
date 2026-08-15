@@ -18,6 +18,7 @@ import {
   useStatTypes,
 } from '@/lib/match-stats';
 import { displayName } from '@/lib/members';
+import { useBreakpoint } from '@/lib/responsive';
 import {
   fetchSeasonMatches,
   fetchSeasons,
@@ -58,6 +59,7 @@ export default function StatsScreen() {
   const { profile, isAdmin } = useAuth();
   const options = useVoteOptions();
   const statTypes = useStatTypes();
+  const { isWide } = useBreakpoint();
 
   const [panel, setPanel] = useState<Panel>('attendance');
 
@@ -190,7 +192,7 @@ export default function StatsScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="통계" subtitle={subtitle} />
+      <ScreenHeader title="통계" subtitle={subtitle} fullWidth={isWide} />
 
       <View style={styles.panelBar}>
         {(Object.keys(PANEL_LABEL) as Panel[]).map((p) => (
@@ -246,6 +248,7 @@ export default function StatsScreen() {
       </View>
 
       <ScreenScroll
+        fullWidth={isWide}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

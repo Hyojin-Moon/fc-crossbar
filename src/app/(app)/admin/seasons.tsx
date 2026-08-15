@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { Fragment, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
@@ -18,11 +18,12 @@ import {
   Screen,
   ScreenScroll,
 } from '@/components/ui';
-import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { formatEventDate, todayLocalISO } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
+import { useBreakpoint } from '@/lib/responsive';
 import {
   createSeason,
   deleteSeason,
@@ -54,6 +55,7 @@ function emptyForm() {
 export default function SeasonsScreen() {
   const { profile } = useAuth();
   const toast = useToast();
+  const { isWide } = useBreakpoint();
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,9 +142,14 @@ export default function SeasonsScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="시즌 관리" subtitle={`${seasons.length}개`} onBack={() => router.back()} />
+      <ScreenHeader
+        title="시즌 관리"
+        subtitle={`${seasons.length}개`}
+        onBack={() => router.back()}
+        fullWidth={isWide}
+      />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <SectionTitle>새 시즌</SectionTitle>
           <Muted>
@@ -184,10 +191,11 @@ export default function SeasonsScreen() {
           ) : seasons.length === 0 ? (
             <EmptyState message="아직 시즌이 없습니다." />
           ) : (
-            seasons.map((season, index) => (
-              <Fragment key={season.id}>
+            <View style={isWide && styles.grid}>
+            {seasons.map((season, index) => (
+              <View key={season.id} style={isWide && styles.col}>
                 <ListRow
-                  first={index === 0}
+                  first={index === 0 || isWide}
                   dotColor={STATUS_COLOR[season.status]}
                   title={season.name}
                   meta={`${formatEventDate(season.start_date)} ~ ${formatEventDate(season.end_date)} · ${
@@ -207,8 +215,9 @@ export default function SeasonsScreen() {
                     <Text style={[styles.actionText, { color: Colors.danger }]}>삭제</Text>
                   </Pressable>
                 </View>
-              </Fragment>
-            ))
+              </View>
+            ))}
+            </View>
           )}
         </Card>
       </ScreenScroll>
@@ -217,6 +226,8 @@ export default function SeasonsScreen() {
 }
 
 const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   pair: { flexDirection: 'row', gap: Spacing.two },
   pairItem: { flex: 1, minWidth: 0 },
   field: { gap: Spacing.one },

@@ -29,6 +29,7 @@ import {
   setEventStat,
 } from '@/lib/match-stats';
 import { displayName, useActiveMembers } from '@/lib/members';
+import { useBreakpoint } from '@/lib/responsive';
 import { fetchSeasonSquads, type SeasonSquad } from '@/lib/seasons';
 import { useVoteOptions } from '@/lib/vote-options';
 import type { MemberMatchStat, StatType } from '@/types/database';
@@ -44,6 +45,7 @@ export default function MatchResultScreen() {
   const { members } = useActiveMembers();
   const voteOptions = useVoteOptions();
   const toast = useToast();
+  const { isWide } = useBreakpoint();
 
   const [event, setEvent] = useState<EventWithVotes | null>(null);
   const [squads, setSquads] = useState<SeasonSquad[]>([]);
@@ -131,8 +133,8 @@ export default function MatchResultScreen() {
   if (!event) {
     return (
       <Screen>
-        <ScreenHeader title="경기 기록" />
-        <ScreenScroll>
+        <ScreenHeader title="경기 기록" fullWidth={isWide} />
+        <ScreenScroll fullWidth={isWide}>
           <Card>
             <SectionTitle>일정을 찾을 수 없습니다</SectionTitle>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
@@ -206,9 +208,10 @@ export default function MatchResultScreen() {
         title="경기 기록"
         subtitle={`${event.title} · ${formatEventDateLong(event.event_date)}`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         {!isAdmin ? (
           <Card>
             <SectionTitle>권한이 없습니다</SectionTitle>

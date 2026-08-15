@@ -16,10 +16,11 @@ import {
   Screen,
   ScreenScroll,
 } from '@/components/ui';
-import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
 import { displayName, useActiveMembers } from '@/lib/members';
+import { useBreakpoint } from '@/lib/responsive';
 import {
   addToBaseRoster,
   createTeam,
@@ -38,6 +39,7 @@ const EMPTY = { name: '', color: TEAM_COLORS[0] as string, memo: '' };
 export default function TeamsScreen() {
   const toast = useToast();
   const { members } = useActiveMembers();
+  const { isWide } = useBreakpoint();
 
   const [teams, setTeams] = useState<TeamWithRoster[]>([]);
   const [roster, setRoster] = useState<BaseRosterRow[]>([]);
@@ -160,9 +162,10 @@ export default function TeamsScreen() {
         title="팀 관리"
         subtitle={`${teams.filter((t) => t.is_active).length}팀 사용 중`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <SectionTitle>{editingId ? '팀 수정' : '팀 만들기'}</SectionTitle>
           <Muted>
@@ -223,10 +226,12 @@ export default function TeamsScreen() {
           ) : teams.length === 0 ? (
             <EmptyState message="아직 만든 팀이 없습니다." />
           ) : (
-            teams.map((team) => {
+            <View style={isWide && styles.grid}>
+            {teams.map((team) => {
               const open = openRoster === team.id;
               return (
-                <View key={team.id} style={styles.row}>
+                <View key={team.id} style={isWide && styles.col}>
+                <View style={[styles.row, isWide && styles.rowWide]}>
                   <View style={styles.rowTop}>
                     <View
                       style={[styles.teamDot, { backgroundColor: team.color ?? Colors.muted }]}
@@ -315,8 +320,10 @@ export default function TeamsScreen() {
                     </View>
                   ) : null}
                 </View>
+                </View>
               );
-            })
+            })}
+            </View>
           )}
           <Muted>스위치를 끄면 새 일정·시즌에서 고를 수 없게 됩니다. 기록은 남습니다.</Muted>
         </Card>
@@ -337,12 +344,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   colorChipSelected: { borderWidth: 3, borderColor: Colors.text },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   row: {
     paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
+  rowWide: { borderTopWidth: 0 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   teamDot: { width: 14, height: 14, borderRadius: 7 },
   rowText: { flex: 1, gap: Spacing.half },

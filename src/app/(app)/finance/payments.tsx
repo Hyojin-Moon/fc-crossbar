@@ -6,11 +6,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
 import { Card, InlineLoader, Muted, SectionTitle, Screen, ScreenScroll, SegmentedControl } from '@/components/ui';
-import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { todayLocalISO } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
 import { confirmAsync } from '@/lib/confirm';
+import { useBreakpoint } from '@/lib/responsive';
 import {
   countPaidMonths,
   deleteAnnualPayment,
@@ -43,6 +44,7 @@ export default function PaymentsScreen() {
   const { members } = useActiveMembers();
   const settings = useSettings();
   const toast = useToast();
+  const { isWide } = useBreakpoint();
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -229,6 +231,7 @@ export default function PaymentsScreen() {
         title="회비 납부"
         subtitle={`월 ${formatWon(settings.monthlyFeeAmount)} 기준`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
       <View style={styles.monthBar}>
@@ -243,7 +246,7 @@ export default function PaymentsScreen() {
         </Pressable>
       </View>
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <SectionTitle>{formatWon(collected)} 수납</SectionTitle>
           <Text style={styles.summaryLine}>
@@ -264,11 +267,13 @@ export default function PaymentsScreen() {
           {loading ? (
             <InlineLoader spacing="vertical" />
           ) : (
-            members.map((member) => {
+            <View style={isWide && styles.grid}>
+            {members.map((member) => {
               const payment = byMember.get(member.id);
               const annualPaid = annualByMember.get(member.id);
               return (
-                <View key={member.id} style={styles.row}>
+                <View key={member.id} style={isWide && styles.col}>
+                <View style={[styles.row, isWide && styles.rowWide]}>
                   <View style={styles.rowTop}>
                     <Text style={styles.name} numberOfLines={1}>
                       {displayName(member)}
@@ -312,8 +317,10 @@ export default function PaymentsScreen() {
                     <Text style={styles.dateLine}>납부일 {payment.payment_date}</Text>
                   ) : null}
                 </View>
+                </View>
               );
-            })
+            })}
+            </View>
           )}
         </Card>
       </ScreenScroll>
@@ -335,12 +342,15 @@ const styles = StyleSheet.create({
   monthArrow: { padding: Spacing.two },
   monthLabel: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text, minWidth: 120, textAlign: 'center' },
   summaryLine: { ...Typography.body, color: Colors.textSecondary },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   row: {
     paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     gap: Spacing.one,
   },
+  rowWide: { borderTopWidth: 0 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   name: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
   amount: { ...Typography.body, fontWeight: Weight.bold, color: Colors.textSecondary },

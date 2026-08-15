@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useToast } from '@/components/toast';
@@ -15,7 +15,7 @@ import {
   ScreenScroll,
   SegmentedControl,
 } from '@/components/ui';
-import { Colors, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Typography, Weight } from '@/constants/theme';
 import {
   deleteMember,
   fetchAllMembers,
@@ -27,6 +27,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { confirmAsync } from '@/lib/confirm';
 import { describeDbError } from '@/lib/errors';
+import { useBreakpoint } from '@/lib/responsive';
 import type { MemberStatus, Profile } from '@/types/database';
 
 const STATUS_COLOR: Record<MemberStatus, string> = {
@@ -38,6 +39,7 @@ const STATUS_COLOR: Record<MemberStatus, string> = {
 export default function MembersScreen() {
   const { profile, isSuperAdmin } = useAuth();
   const toast = useToast();
+  const { isWide } = useBreakpoint();
 
   const [members, setMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,9 +101,14 @@ export default function MembersScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="회원 관리" subtitle={`전체 ${counts.total}명`} onBack={() => router.back()} />
+      <ScreenHeader
+        title="회원 관리"
+        subtitle={`전체 ${counts.total}명`}
+        onBack={() => router.back()}
+        fullWidth={isWide}
+      />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <Text style={styles.summary}>
             활성 {counts.active} · 승인 대기 {counts.pending} · 비활성 {counts.inactive}
@@ -118,6 +125,7 @@ export default function MembersScreen() {
             <SectionTitle>회원 목록</SectionTitle>
             <Muted>이름을 누르면 변경 항목이 열립니다.</Muted>
 
+            <View style={isWide && styles.grid}>
             {sorted.map((member, index) => {
               const isSelf = member.id === profile?.id;
               const isTargetSuperAdmin = member.role === 'super_admin';
@@ -132,9 +140,9 @@ export default function MembersScreen() {
                 member.status === 'active' || member.status === 'inactive' ? member.status : null;
 
               return (
+                <View key={member.id} style={isWide && styles.col}>
                 <ListRow
-                  key={member.id}
-                  first={index === 0}
+                  first={index === 0 || isWide}
                   dotColor={STATUS_COLOR[member.status]}
                   title={`${member.name}${isSelf ? ' · 나' : ''}`}
                   meta={`${member.login_id ?? '-'} · ${ROLE_LABEL[member.role]} · ${
@@ -201,8 +209,10 @@ export default function MembersScreen() {
                     <Muted>본인 권한은 스스로 바꿀 수 없습니다.</Muted>
                   ) : null}
                 </ListRow>
+                </View>
               );
             })}
+            </View>
           </Card>
         )}
       </ScreenScroll>
@@ -212,4 +222,6 @@ export default function MembersScreen() {
 
 const styles = StyleSheet.create({
   summary: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.text },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
 });

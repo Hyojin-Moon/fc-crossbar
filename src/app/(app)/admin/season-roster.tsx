@@ -18,11 +18,12 @@ import {
   ScreenScroll,
   SegmentedControl,
 } from '@/components/ui';
-import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { confirmAsync } from '@/lib/confirm';
 import { formatEventDate } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
 import { useActiveMembers } from '@/lib/members';
+import { useBreakpoint } from '@/lib/responsive';
 import {
   addSeasonTeam,
   applyBaseRoster,
@@ -48,6 +49,7 @@ export default function SeasonRosterScreen() {
   const toast = useToast();
   const { members } = useActiveMembers();
   const { teams } = useTeams();
+  const { isWide } = useBreakpoint();
 
   const [season, setSeason] = useState<Season | null>(null);
   const [squads, setSquads] = useState<SeasonSquad[]>([]);
@@ -94,8 +96,8 @@ export default function SeasonRosterScreen() {
   if (!season) {
     return (
       <Screen>
-        <ScreenHeader title="시즌" />
-        <ScreenScroll>
+        <ScreenHeader title="시즌" fullWidth={isWide} />
+        <ScreenScroll fullWidth={isWide}>
           <Card>
             <SectionTitle>시즌을 찾을 수 없습니다</SectionTitle>
             <AppButton label="뒤로" variant="outline" onPress={() => router.back()} />
@@ -168,9 +170,10 @@ export default function SeasonRosterScreen() {
           SEASON_STATUS_LABEL[season.status]
         }`}
         onBack={() => router.back()}
+        fullWidth={isWide}
       />
 
-      <ScreenScroll>
+      <ScreenScroll fullWidth={isWide}>
         <Card>
           <SectionTitle>시즌 정보</SectionTitle>
 
@@ -286,10 +289,12 @@ export default function SeasonRosterScreen() {
           </Card>
         ) : null}
 
+        <View style={isWide && styles.grid}>
         {squads.map((squad) => {
           const open = openTeam === squad.seasonTeamId;
           return (
-            <Card key={squad.seasonTeamId}>
+            <View key={squad.seasonTeamId} style={isWide && styles.col}>
+            <Card>
               <ListRow
                 first
                 dotColor={squad.color ?? Colors.navySoft}
@@ -385,14 +390,18 @@ export default function SeasonRosterScreen() {
                 </View>
               ) : null}
             </Card>
+            </View>
           );
         })}
+        </View>
       </ScreenScroll>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  col: { flexGrow: 1, flexBasis: '48%', minWidth: 0, maxWidth: MaxContentWidth },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   addChip: {
     flexDirection: 'row',

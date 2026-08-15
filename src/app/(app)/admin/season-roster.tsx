@@ -457,5 +457,5 @@ const styles = StyleSheet.create({
   pickRowOff: { opacity: 0.45 },
   pickName: { flex: 1, ...Typography.bodyLarge, color: Colors.text },
   pickNameOn: { fontWeight: Weight.bold },
-  pickNote: { ...Typography.caption, color: Colors.muted },
+  pickNote: { ...Typography.caption, color: Colors.textSecondary },
 });

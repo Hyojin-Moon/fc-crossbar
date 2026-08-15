@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   memberRowMe: { backgroundColor: '#F0F6FF', borderRadius: Radius.sm, paddingHorizontal: Spacing.two },
   memberTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  rank: { width: 20, ...Typography.caption, fontWeight: Weight.bold, color: Colors.muted, fontVariant: ['tabular-nums'] },
+  rank: { width: 20, ...Typography.caption, fontWeight: Weight.bold, color: Colors.textSecondary, fontVariant: ['tabular-nums'] },
   memberName: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
   memberNameMe: { fontWeight: Weight.bold },
   meBadge: {

@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
   squadMembers: { ...Typography.body, color: Colors.textSecondary, lineHeight: 20 },
   matchDateBox: { width: 62 },
   matchDate: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.textSecondary },
-  matchTime: { ...Typography.caption, color: Colors.muted },
+  matchTime: { ...Typography.caption, color: Colors.textSecondary },
   matchScore: {
     ...Typography.bodyLarge,
     fontWeight: Weight.bold,
     color: Colors.navy,
     fontVariant: ['tabular-nums'],
   },
-  matchScoreEmpty: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.muted },
+  matchScoreEmpty: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.textSecondary },
 });

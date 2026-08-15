@@ -143,6 +143,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.one },
   empty: { paddingVertical: Spacing.four, alignItems: 'center' },
-  emptyText: { ...Typography.body, color: Colors.muted },
+  emptyText: { ...Typography.body, color: Colors.textSecondary },
   caption: { ...Typography.caption, color: Colors.textSecondary },
 });

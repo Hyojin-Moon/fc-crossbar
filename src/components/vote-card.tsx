@@ -188,5 +188,5 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   footerText: { ...Typography.caption, color: Colors.textSecondary },
-  footerMuted: { ...Typography.caption, color: Colors.muted },
+  footerMuted: { ...Typography.caption, color: Colors.textSecondary },
 });

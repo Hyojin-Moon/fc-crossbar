@@ -1,21 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { DateTimeInput } from '@/components/datetime-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { StatTable } from '@/components/stat-table';
 import { TrendChart } from '@/components/trend-chart';
-import { Card, Muted, SectionTitle } from '@/components/ui';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Card, ChipRow, InlineLoader, Muted, SectionTitle, Screen, ScreenScroll } from '@/components/ui';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatEventDate, todayLocalISO } from '@/lib/dates';
 import { describeDbError } from '@/lib/errors';
@@ -47,6 +39,7 @@ import { useVoteOptions } from '@/lib/vote-options';
 import type { MemberStatTotal, Season, SeasonStanding } from '@/types/database';
 
 const PERIODS: PeriodKey[] = ['recent1m', 'recent3m', 'recent6m', 'thisYear', 'lastYear', 'all', 'custom'];
+const PERIOD_ITEMS = PERIODS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }));
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'rate', label: '참석률' },
   { key: 'attend', label: '참석 수' },
@@ -196,7 +189,7 @@ export default function StatsScreen() {
       : `${PERIOD_LABELS[period]} · ${panel === 'attendance' ? '실제 출석 기준' : '경기 기록 기준'}`;
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <ScreenHeader title="통계" subtitle={subtitle} />
 
       <View style={styles.panelBar}>
@@ -220,42 +213,24 @@ export default function StatsScreen() {
           seasons.length === 0 ? (
             <Text style={styles.filterHint}>등록된 시즌이 없습니다.</Text>
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chips}>
-              {seasons.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => selectSeason(s.id)}
-                  style={[styles.chip, s.id === seasonId && styles.chipActive]}>
-                  <Text style={[styles.chipText, s.id === seasonId && styles.chipTextActive]}>
-                    {s.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            <ChipRow
+              items={seasons.map((s) => ({ value: s.id as string | null, label: s.name }))}
+              value={seasonId}
+              onChange={(id) => id && selectSeason(id)}
+              layout="scroll"
+            />
           )
         ) : (
           <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chips}>
-              {PERIODS.map((p) => (
-                <Pressable
-                  key={p}
-                  onPress={() => {
-                    setPeriod(p);
-                    setLoading(true);
-                  }}
-                  style={[styles.chip, period === p && styles.chipActive]}>
-                  <Text style={[styles.chipText, period === p && styles.chipTextActive]}>
-                    {PERIOD_LABELS[p]}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            <ChipRow
+              items={PERIOD_ITEMS}
+              value={period}
+              onChange={(p) => {
+                setPeriod(p);
+                setLoading(true);
+              }}
+              layout="scroll"
+            />
             {period === 'custom' ? (
               <View style={styles.customRow}>
                 <View style={styles.customItem}>
@@ -270,8 +245,7 @@ export default function StatsScreen() {
         )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
+      <ScreenScroll
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -284,7 +258,7 @@ export default function StatsScreen() {
           />
         }>
         {loading ? (
-          <ActivityIndicator color={Colors.navy} style={styles.loader} />
+          <InlineLoader />
         ) : error ? (
           <Card>
             <SectionTitle>불러오지 못했습니다</SectionTitle>
@@ -416,7 +390,7 @@ export default function StatsScreen() {
               ) : null}
             </Card>
           ) : seasonLoading ? (
-            <ActivityIndicator color={Colors.navy} style={styles.loader} />
+            <InlineLoader />
           ) : (
             <>
               <Card>
@@ -516,8 +490,8 @@ export default function StatsScreen() {
             )}
           </>
         )}
-      </ScrollView>
-    </View>
+      </ScreenScroll>
+    </Screen>
   );
 }
 
@@ -540,7 +514,6 @@ function Tile({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.surface },
   panelBar: {
     flexDirection: 'row',
     backgroundColor: Colors.navy,
@@ -550,14 +523,14 @@ const styles = StyleSheet.create({
   },
   panelTab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: Spacing.two,
     borderRadius: Radius.sm,
     alignItems: 'center',
     backgroundColor: Colors.navySoft,
   },
   panelTabActive: { backgroundColor: Colors.background },
-  panelText: { fontSize: 13, fontWeight: '700', color: '#B9C6D6' },
-  panelTextActive: { color: Colors.navy, fontWeight: '800' },
+  panelText: { ...Typography.body, fontWeight: Weight.bold, color: '#B9C6D6' },
+  panelTextActive: { color: Colors.navy, fontWeight: Weight.bold },
   filterBar: {
     backgroundColor: Colors.background,
     borderBottomWidth: 1,
@@ -565,75 +538,61 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     gap: Spacing.two,
   },
-  filterHint: { fontSize: 12, color: Colors.muted, paddingHorizontal: Spacing.three },
-  chips: { paddingHorizontal: Spacing.three, gap: Spacing.two },
-  chip: {
-    paddingVertical: 7,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextActive: { color: Colors.textOnNavy },
+  filterHint: { ...Typography.caption, color: Colors.textSecondary, paddingHorizontal: Spacing.three },
   customRow: { flexDirection: 'row', gap: Spacing.two, paddingHorizontal: Spacing.three },
   customItem: { flex: 1, minWidth: 0 },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  loader: { marginTop: Spacing.five },
-  link: { fontSize: 14, fontWeight: '700', color: Colors.navy },
+  link: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.navy },
   adminLink: { alignItems: 'center', paddingVertical: Spacing.two },
   heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two },
-  hero: { fontSize: 40, fontWeight: '800', color: Colors.navy },
-  heroSub: { fontSize: 13, color: Colors.textSecondary },
+  hero: { ...Typography.displayLarge, fontWeight: Weight.bold, color: Colors.navy },
+  heroSub: { ...Typography.body, color: Colors.textSecondary },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   tile: {
     flexGrow: 1,
     flexBasis: '45%',
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
-    padding: Spacing.two + 2,
-    gap: 2,
+    padding: Spacing.two,
+    gap: Spacing.half,
   },
-  tileValue: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  tileLabel: { fontSize: 12, color: Colors.textSecondary },
-  topLine: { fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.one },
-  topName: { fontWeight: '800', color: Colors.text },
+  tileValue: { ...Typography.titleLarge, fontWeight: Weight.bold, color: Colors.text },
+  tileLabel: { ...Typography.caption, color: Colors.textSecondary },
+  topLine: { ...Typography.body, color: Colors.textSecondary, marginTop: Spacing.one },
+  topName: { fontWeight: Weight.bold, color: Colors.text },
   tableHead: { gap: Spacing.two },
   sortChips: { flexDirection: 'row', gap: Spacing.one },
   sortChip: {
-    paddingVertical: 5,
-    paddingHorizontal: Spacing.two + 2,
-    borderRadius: 999,
+    paddingVertical: Spacing.oneHalf,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.full,
     backgroundColor: Colors.surface,
   },
   sortChipActive: { backgroundColor: Colors.navySoft },
-  sortText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
+  sortText: { ...Typography.caption, fontWeight: Weight.semibold, color: Colors.textSecondary },
   sortTextActive: { color: Colors.textOnNavy },
   memberRow: {
-    paddingTop: Spacing.two + 2,
+    paddingTop: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    gap: 5,
+    gap: Spacing.oneHalf,
   },
   memberRowMe: { backgroundColor: '#F0F6FF', borderRadius: Radius.sm, paddingHorizontal: Spacing.two },
   memberTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  rank: { width: 20, fontSize: 12, fontWeight: '700', color: Colors.muted, fontVariant: ['tabular-nums'] },
-  memberName: { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.text },
-  memberNameMe: { fontWeight: '800' },
+  rank: { width: 20, ...Typography.caption, fontWeight: Weight.bold, color: Colors.muted, fontVariant: ['tabular-nums'] },
+  memberName: { flex: 1, ...Typography.bodyLarge, fontWeight: Weight.semibold, color: Colors.text },
+  memberNameMe: { fontWeight: Weight.bold },
   meBadge: {
     backgroundColor: Colors.navy,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: Spacing.oneHalf,
+    paddingVertical: Spacing.half,
     borderRadius: Radius.sm,
   },
-  meBadgeText: { color: Colors.textOnNavy, fontSize: 10, fontWeight: '700' },
-  rate: { fontSize: 15, fontWeight: '800', color: Colors.navy, fontVariant: ['tabular-nums'] },
+  meBadgeText: { ...Typography.micro, color: Colors.textOnNavy, fontWeight: Weight.bold },
+  rate: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.navy, fontVariant: ['tabular-nums'] },
   barTrack: { height: 8, borderRadius: 4, backgroundColor: Colors.border, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4, backgroundColor: Colors.accent },
-  breakdown: { fontSize: 12, color: Colors.textSecondary },
-  subMetric: { fontSize: 12, color: Colors.muted },
+  breakdown: { ...Typography.caption, color: Colors.textSecondary },
+  subMetric: { ...Typography.caption, color: Colors.textSecondary },
   tableHeadRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -648,10 +607,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  colHead: { fontSize: 11, fontWeight: '700', color: Colors.muted },
-  cellText: { fontSize: 13, color: Colors.textSecondary, fontVariant: ['tabular-nums'] },
-  cellTeamText: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  cellPoint: { fontSize: 14, fontWeight: '800', color: Colors.navy, fontVariant: ['tabular-nums'] },
+  colHead: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.textSecondary },
+  cellText: { ...Typography.body, color: Colors.textSecondary, fontVariant: ['tabular-nums'] },
+  cellTeamText: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.text },
+  cellPoint: { ...Typography.bodyLarge, fontWeight: Weight.bold, color: Colors.navy, fontVariant: ['tabular-nums'] },
   cellRank: { width: 20 },
   cellTeam: { flex: 1, minWidth: 0, paddingRight: Spacing.one },
   cellNum: { width: 34, textAlign: 'center' },

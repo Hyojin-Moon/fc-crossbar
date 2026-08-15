@@ -303,6 +303,7 @@ export default function PaymentsScreen() {
                   <SegmentedControl
                     options={STATUS_OPTIONS}
                     value={payment?.status ?? null}
+                    // 연납자에게 월납까지 찍으면 같은 돈이 두 번 수입으로 잡힌다
                     disabled={pendingId !== null || Boolean(annualPaid)}
                     dimmed={Boolean(annualPaid)}
                     onChange={(status) => void setStatus(member.id, status)}

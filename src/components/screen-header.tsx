@@ -26,6 +26,7 @@ export function ScreenHeader({ title, subtitle, onBack, right, fullWidth }: Prop
         {right}
         {onBack ? (
           <Pressable
+            accessibilityRole="button"
             accessibilityLabel="뒤로"
             onPress={onBack}
             style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>

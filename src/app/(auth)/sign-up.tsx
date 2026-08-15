@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/toast';
 import { AppButton, Field } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 import { describeAuthError } from '@/lib/errors';
 import { validateLoginId } from '@/lib/login-id';
@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.four },
-  title: { fontSize: 26, fontWeight: '800', color: Colors.navy, textAlign: 'center' },
+  title: { ...Typography.headline, fontWeight: Weight.bold, color: Colors.navy, textAlign: 'center' },
   form: { gap: Spacing.three },
 });

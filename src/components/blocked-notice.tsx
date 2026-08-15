@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing, Typography, Weight } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
 
 type Reason = 'pending' | 'inactive' | 'missing';
@@ -41,9 +41,9 @@ export function BlockedNotice({ reason }: { reason: Reason }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   content: { flex: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.three },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.navy, textAlign: 'center' },
+  title: { ...Typography.titleLarge, fontWeight: Weight.bold, color: Colors.navy, textAlign: 'center' },
   body: {
-    fontSize: 15,
+    ...Typography.bodyLarge,
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.three,

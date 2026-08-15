@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 
 type ToastKind = 'success' | 'error' | 'info';
 type ToastState = { message: string; kind: ToastKind } | null;
@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toast: {
-    paddingVertical: Spacing.two + 2,
+    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.lg,
     maxWidth: '100%',
   },
-  text: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  text: { color: '#FFFFFF', ...Typography.body, fontWeight: Weight.semibold, textAlign: 'center' },
 });

@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import type { StatRow } from '@/lib/match-stats';
 import type { StatType } from '@/types/database';
 
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     height: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.one,
     paddingRight: Spacing.two,
   },
   statHead: {
@@ -125,28 +125,28 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   statHeadActive: { backgroundColor: Colors.navy },
-  headText: { fontSize: 11, fontWeight: '700', color: Colors.muted },
+  headText: { ...Typography.caption, fontWeight: Weight.bold, color: Colors.muted },
   headTextActive: { color: Colors.textOnNavy },
   rank: {
     width: 16,
-    fontSize: 11,
-    fontWeight: '700',
+    ...Typography.caption,
+    fontWeight: Weight.bold,
     color: Colors.muted,
     fontVariant: ['tabular-nums'],
   },
-  name: { flex: 1, minWidth: 0, fontSize: 13, color: Colors.text },
-  nameMe: { fontWeight: '800' },
+  name: { flex: 1, minWidth: 0, ...Typography.body, color: Colors.text },
+  nameMe: { fontWeight: Weight.bold },
   meRow: { backgroundColor: '#F0F6FF' },
-  meBadge: { backgroundColor: Colors.navy, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
-  meBadgeText: { fontSize: 9, fontWeight: '800', color: Colors.textOnNavy },
+  meBadge: { backgroundColor: Colors.navy, borderRadius: 4, paddingHorizontal: Spacing.one, paddingVertical: Spacing.half },
+  meBadgeText: { ...Typography.micro, fontWeight: Weight.bold, color: Colors.textOnNavy },
   statCell: {
     width: 46,
     textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '700',
+    ...Typography.body,
+    fontWeight: Weight.bold,
     color: Colors.text,
     fontVariant: ['tabular-nums'],
   },
-  statCellZero: { color: Colors.border, fontWeight: '400' },
-  statCellSorted: { color: Colors.navy, fontWeight: '800' },
+  statCellZero: { color: Colors.border, fontWeight: Weight.regular },
+  statCellSorted: { color: Colors.navy, fontWeight: Weight.bold },
 });

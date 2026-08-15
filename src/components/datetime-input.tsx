@@ -3,7 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography, Weight } from '@/constants/theme';
 import { parseLocalDate, toLocalISODate, toTimeString } from '@/lib/dates';
 
 type Props = {
@@ -76,7 +76,7 @@ export function DateTimeInput({ label, mode, value, onChange, placeholder, hint 
 
 const styles = StyleSheet.create({
   field: { gap: Spacing.one },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  label: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   row: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   input: {
     flex: 1,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
-    fontSize: 16,
+    ...Typography.bodyLarge,
     color: Colors.text,
     backgroundColor: Colors.surface,
   },
@@ -102,5 +102,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.background,
   },
-  hint: { fontSize: 12, color: Colors.muted },
+  hint: { ...Typography.caption, color: Colors.textSecondary },
 });

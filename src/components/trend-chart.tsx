@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing, Typography } from '@/constants/theme';
 import { parseLocalDate } from '@/lib/dates';
 import type { TrendPoint } from '@/lib/stats';
 
@@ -143,6 +143,6 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.one },
   empty: { paddingVertical: Spacing.four, alignItems: 'center' },
-  emptyText: { fontSize: 13, color: Colors.muted },
-  caption: { fontSize: 12, color: Colors.textSecondary },
+  emptyText: { ...Typography.body, color: Colors.muted },
+  caption: { ...Typography.caption, color: Colors.textSecondary },
 });

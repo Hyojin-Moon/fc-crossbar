@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/ui';
 import { useToast } from '@/components/toast';
-import { Colors, Radius, Spacing, VoteColors } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography, VoteColors, Weight } from '@/constants/theme';
 import {
   formatDeadline,
   formatEventDateLong,
@@ -153,20 +153,20 @@ function optionLabel(code: VoteCode, options: { code: string; label: string }[])
 const styles = StyleSheet.create({
   card: { gap: Spacing.two },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  badge: { paddingHorizontal: Spacing.two, paddingVertical: 3, borderRadius: Radius.sm },
+  badge: { paddingHorizontal: Spacing.two, paddingVertical: Spacing.half, borderRadius: Radius.sm },
   badge_before: { backgroundColor: Colors.muted },
   badge_open: { backgroundColor: Colors.accent },
   badge_closed: { backgroundColor: Colors.navySoft },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  dayLabel: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  title: { fontSize: 19, fontWeight: '800', color: Colors.text, marginTop: Spacing.one },
-  when: { fontSize: 14, color: Colors.textSecondary },
-  venue: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  badgeText: { color: '#FFFFFF', ...Typography.caption, fontWeight: Weight.bold },
+  dayLabel: { ...Typography.body, fontWeight: Weight.bold, color: Colors.navy },
+  title: { ...Typography.title, fontWeight: Weight.bold, color: Colors.text, marginTop: Spacing.one },
+  when: { ...Typography.body, color: Colors.textSecondary },
+  venue: { ...Typography.body, color: Colors.textSecondary, marginTop: Spacing.half },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.one },
   countRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  countLabel: { fontSize: 14, color: Colors.textSecondary },
-  countValue: { fontSize: 20, fontWeight: '800', color: Colors.navy },
-  countMax: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  countLabel: { ...Typography.body, color: Colors.textSecondary },
+  countValue: { ...Typography.title, fontWeight: Weight.bold, color: Colors.navy },
+  countMax: { ...Typography.body, fontWeight: Weight.semibold, color: Colors.textSecondary },
   buttonRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
   voteButton: {
     flex: 1,
@@ -179,14 +179,14 @@ const styles = StyleSheet.create({
   },
   voteButtonDisabled: { opacity: 0.4 },
   voteButtonPressed: { opacity: 0.7 },
-  voteLabel: { fontSize: 16, fontWeight: '800' },
-  voteCount: { fontSize: 11, fontWeight: '600', marginTop: 1 },
+  voteLabel: { ...Typography.bodyLarge, fontWeight: Weight.bold },
+  voteCount: { ...Typography.caption, fontWeight: Weight.semibold, marginTop: Spacing.half },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.one,
   },
-  footerText: { fontSize: 12, color: Colors.textSecondary },
-  footerMuted: { fontSize: 12, color: Colors.muted },
+  footerText: { ...Typography.caption, color: Colors.textSecondary },
+  footerMuted: { ...Typography.caption, color: Colors.muted },
 });
